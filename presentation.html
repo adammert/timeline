@@ -141,6 +141,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/parser.js"></script>
+  <script src="js/images.js"></script>
   <script>
     // Presentation Window Script
     (function() {
@@ -294,7 +295,7 @@
       /**
        * Render timeline from markdown
        */
-      function renderTimeline(markdown) {
+      async function renderTimeline(markdown) {
         if (!markdown || !markdown.trim()) {
           timelineOutput.innerHTML = '<div class="loading-message">Keine Daten vorhanden.</div>';
           return;
@@ -336,9 +337,13 @@
         // Add today marker
         addTodayMarker(events);
         
-        // Add duration bars after DOM is ready
-        setTimeout(() => {
+        // Add duration bars and replace images after DOM is ready
+        setTimeout(async () => {
           addDurationBars(events);
+          // Replace image references
+          if (TimelineApp.Images) {
+            await TimelineApp.Images.replaceImageReferences(timelineOutput);
+          }
           // Apply filters after rendering
           applySearchAndFilter();
         }, 50);
@@ -388,7 +393,28 @@
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('timeline-content');
         if (event.eventClass) contentDiv.classList.add(event.eventClass);
-        contentDiv.innerHTML = marked.parse(event.content || 'Kein Inhalt.');
+        
+        // Create temporary container for parsing
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = marked.parse(event.content || 'Kein Inhalt.');
+        
+        // Find and replace all images with images/ prefix BEFORE adding to DOM
+        const images = tempDiv.querySelectorAll('img');
+        images.forEach(img => {
+          const src = img.getAttribute('src');
+          if (src && src.startsWith('images/')) {
+            const filename = src.replace('images/', '');
+            // Set placeholder and data attribute
+            img.setAttribute('src', 'data:image/gif;base64,R0lGODlhAQABAAAAACw=');
+            img.setAttribute('data-filename', filename);
+            img.style.display = 'none';
+          }
+        });
+        
+        // Now move the processed content to the actual contentDiv
+        while (tempDiv.firstChild) {
+          contentDiv.appendChild(tempDiv.firstChild);
+        }
         
         itemDiv.appendChild(dateDiv);
         itemDiv.appendChild(contentDiv);
@@ -508,7 +534,12 @@
       });
       
       // Initialize
-      initChannel();
+      async function initPresentation() {
+        await TimelineApp.Images.init();
+        initChannel();
+      }
+      
+      initPresentation();
     })();
   </script>
 </body>

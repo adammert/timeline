@@ -22,6 +22,7 @@
    */
   function init() {
     cacheDOMElements();
+    initImages();
     loadFromStorage();
     loadTheme();
     setupEventListeners();
@@ -30,6 +31,18 @@
     setupModals();
     setupTemplates();
     parseAndRenderTimeline();
+  }
+
+  /**
+   * Initialize image management
+   */
+  async function initImages() {
+    try {
+      await TimelineApp.Images.init();
+      console.log('Image management initialized');
+    } catch (e) {
+      console.error('Failed to initialize images:', e);
+    }
   }
 
   /**
@@ -116,8 +129,8 @@
   /**
    * Parse and render timeline
    */
-  function parseAndRenderTimeline() {
-    const success = TimelineApp.Renderer.renderTimeline(
+  async function parseAndRenderTimeline() {
+    const success = await TimelineApp.Renderer.renderTimeline(
       elements.markdownInput,
       elements.timelineOutput
     );
@@ -157,7 +170,32 @@
     elements.markdownInput.addEventListener("input", handleMarkdownInput);
 
     // File operations
-    elements.loadMarkdownBtn.addEventListener("click", () => {
+    elements.loadMarkdownBtn.addEventListener("click", async () => {
+      // Try using File System Access API first
+      if ('showOpenFilePicker' in window) {
+        const useFileSystem = confirm(
+          'Möchten Sie eine Markdown-Datei mit Bildern laden?\n\n' +
+          'Ja = Ordner-basiertes Laden (mit Bildern)\n' +
+          'Nein = Einzelne Datei auswählen'
+        );
+        
+        if (useFileSystem) {
+          const markdown = await TimelineApp.Export.loadMarkdownWithImages();
+          if (markdown) {
+            elements.markdownInput.value = markdown;
+            TimelineApp.Storage.saveToHistory(markdown);
+            TimelineApp.Storage.saveToLocalStorage(markdown);
+            await parseAndRenderTimeline();
+            
+            if (TimelineApp.Presentation.isOpen()) {
+              TimelineApp.Presentation.sendMarkdownUpdate(markdown);
+            }
+          }
+          return;
+        }
+      }
+      
+      // Fallback to standard file input
       elements.loadMarkdownInput.value = "";
       elements.loadMarkdownInput.click();
     });
@@ -243,7 +281,27 @@
   /**
    * Handle save markdown
    */
-  function handleSaveMarkdown() {
+  async function handleSaveMarkdown() {
+    const hasImages = /!\[([^\]]*)\]\(images\/([^)]+)\)/.test(elements.markdownInput.value);
+    
+    if (hasImages) {
+      const useFileSystem = confirm(
+        'Diese Timeline enthält Bilder.\n\n' +
+        'Möchten Sie mit Bildern speichern? (Chrome/Edge erforderlich)\n\n' +
+        'Ja = Ordner mit Markdown + images/\n' +
+        'Nein = Nur Markdown-Datei'
+      );
+      
+      if (useFileSystem) {
+        await TimelineApp.Export.exportMarkdownWithImages(
+          elements.markdownInput.value,
+          getCurrentTitle
+        );
+        return;
+      }
+    }
+    
+    // Standard markdown export
     TimelineApp.Export.exportMarkdown(
       elements.markdownInput.value,
       getCurrentTitle
@@ -371,36 +429,47 @@
       elements.markdownInput.classList.remove("drag-over");
     });
 
-    elements.markdownInput.addEventListener("drop", (e) => {
+    elements.markdownInput.addEventListener("drop", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       elements.markdownInput.classList.remove("drag-over");
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
-        const file = files[0];
-        if (
-          file.name.endsWith(".md") ||
-          file.type === "text/markdown" ||
-          file.type === "text/plain"
-        ) {
-          const reader = new FileReader();
-          reader.onload = (evt) => {
-            elements.markdownInput.value = evt.target.result;
-            TimelineApp.Storage.saveToHistory(evt.target.result);
-            TimelineApp.Storage.saveToLocalStorage(evt.target.result);
-            parseAndRenderTimeline();
-            
-            // Update presentation window if open
-            if (TimelineApp.Presentation.isOpen()) {
-              TimelineApp.Presentation.sendMarkdownUpdate(evt.target.result);
-            }
-          };
-          reader.readAsText(file, "utf-8");
-        } else {
-          alert("Bitte nur .md oder Text-Dateien ablegen.");
+        // Check if any images
+        const hasImages = await TimelineApp.Images.handleDrop(e, elements.markdownInput);
+        
+        if (!hasImages) {
+          // Handle markdown files as before
+          const file = files[0];
+          if (
+            file.name.endsWith(".md") ||
+            file.type === "text/markdown" ||
+            file.type === "text/plain"
+          ) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              elements.markdownInput.value = evt.target.result;
+              TimelineApp.Storage.saveToHistory(evt.target.result);
+              TimelineApp.Storage.saveToLocalStorage(evt.target.result);
+              parseAndRenderTimeline();
+              
+              // Update presentation window if open
+              if (TimelineApp.Presentation.isOpen()) {
+                TimelineApp.Presentation.sendMarkdownUpdate(evt.target.result);
+              }
+            };
+            reader.readAsText(file, "utf-8");
+          } else {
+            alert("Bitte nur .md, Text-Dateien oder Bilder ablegen.");
+          }
         }
       }
+    });
+
+    // Paste event for screenshots
+    elements.markdownInput.addEventListener("paste", async (e) => {
+      await TimelineApp.Images.handlePaste(e, elements.markdownInput);
     });
   }
 

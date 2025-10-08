@@ -9,7 +9,7 @@ TimelineApp.Renderer = {
   /**
    * Render timeline from markdown input
    */
-  renderTimeline(markdownInput, timelineOutputContainer) {
+  async renderTimeline(markdownInput, timelineOutputContainer) {
     try {
       const fullMarkdown = markdownInput.value;
       const parsedTop = TimelineApp.Parser.extractTitleFromMarkdown(fullMarkdown);
@@ -57,6 +57,12 @@ TimelineApp.Renderer = {
       }
 
       this.addTodayMarker(events, timelineOutputContainer);
+      
+      // Replace image references with actual images from IndexedDB
+      if (TimelineApp.Images) {
+        await TimelineApp.Images.replaceImageReferences(timelineOutputContainer);
+      }
+      
       return true;
     } catch (error) {
       console.error("Parse error:", error);
@@ -114,7 +120,28 @@ TimelineApp.Renderer = {
     const contentDiv = document.createElement("div");
     contentDiv.classList.add("timeline-content");
     if (event.eventClass) contentDiv.classList.add(event.eventClass);
-    contentDiv.innerHTML = marked.parse(event.content || "Kein Inhalt.");
+    
+    // Create temporary container for parsing
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = marked.parse(event.content || "Kein Inhalt.");
+    
+    // Find and replace all images with images/ prefix BEFORE adding to DOM
+    const images = tempDiv.querySelectorAll('img');
+    images.forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && src.startsWith('images/')) {
+        const filename = src.replace('images/', '');
+        // Set placeholder and data attribute
+        img.setAttribute('src', 'data:image/gif;base64,R0lGODlhAQABAAAAACw=');
+        img.setAttribute('data-filename', filename);
+        img.style.display = 'none';
+      }
+    });
+    
+    // Now move the processed content to the actual contentDiv
+    while (tempDiv.firstChild) {
+      contentDiv.appendChild(tempDiv.firstChild);
+    }
 
     itemDiv.appendChild(dateDiv);
     itemDiv.appendChild(contentDiv);

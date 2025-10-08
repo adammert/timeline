@@ -1,68 +1,50 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Timeline Visualizer</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timeline Visualizer</title>
+  
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+    integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Application Scripts - Order matters! -->
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/images.js"></script>
+  <script src="js/presentation.js"></script>
+  <script src="js/app.js"></script>
+</head>
 
-    <!-- External Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-      integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css" />
-
-    <!-- Application Scripts - Order matters! -->
-    <script src="js/config.js"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/parser.js"></script>
-    <script src="js/renderer.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/stats.js"></script>
-    <script src="js/export.js"></script>
-    <script src="js/presentation.js"></script>
-    <script src="js/app.js"></script>
-  </head>
-
-  <body>
-    <div class="app-container">
-      <!-- Input Panel -->
-      <div class="input-panel">
-        <div class="header-controls">
-          <div class="header-buttons">
-            <button
-              class="templates-toggle"
-              id="templatesToggle"
-              title="Templates"
-            >
-              📄
-            </button>
-            <button class="stats-toggle" id="statsToggle" title="Statistiken">
-              📊
-            </button>
-            <button
-              class="theme-toggle"
-              id="themeToggle"
-              title="Theme wechseln"
-            >
-              🌙
-            </button>
-          </div>
-          <h1>Timeline Editor</h1>
-          <div style="width: 130px"></div>
+<body>
+  <div class="app-container">
+    <!-- Input Panel -->
+    <div class="input-panel">
+      <div class="header-controls">
+        <div class="header-buttons">
+          <button class="templates-toggle" id="templatesToggle" title="Templates">📄</button>
+          <button class="stats-toggle" id="statsToggle" title="Statistiken">📊</button>
+          <button class="theme-toggle" id="themeToggle" title="Theme wechseln">🌙</button>
         </div>
+        <h1>Timeline Editor</h1>
+        <div style="width: 130px"></div>
+      </div>
 
-        <label for="markdownInput">Ereignisse eingeben:</label>
-        <div class="textarea-container">
-          <textarea
-            id="markdownInput"
-            placeholder="Beispiel:
+      <label for="markdownInput">Ereignisse eingeben:</label>
+      <div class="textarea-container">
+        <textarea id="markdownInput" placeholder="Beispiel:
 date: 2023-01-15 10:00:00
 ## Projektstart
 - Kick-off Meeting
@@ -70,149 +52,115 @@ date: 2023-01-15 10:00:00
 ---
 date: 2023-01-20 14:30:00
 Erster Meilenstein erreicht
-> Super Fortschritt!"
-          ></textarea>
-          <div class="autosave-indicator" id="autosaveIndicator">
-            Gespeichert
-          </div>
-        </div>
+> Super Fortschritt!"></textarea>
+        <div class="autosave-indicator" id="autosaveIndicator">Gespeichert</div>
+      </div>
 
-        <div class="search-filter-container">
-          <div class="search-box">
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="Suche in Timeline... (Strg+F)"
-            />
-            <button class="search-clear" id="searchClear">×</button>
-          </div>
-          <div class="filter-dropdown">
-            <button class="filter-button" id="filterButton">
-              <span>Filter</span>
-              <span id="filterCount"></span>
-            </button>
-            <div class="filter-menu" id="filterMenu">
-              <div class="filter-option">
-                <input
-                  type="checkbox"
-                  id="filter-critical"
-                  value="critical"
-                  checked
-                />
-                <label for="filter-critical">Critical</label>
-              </div>
-              <div class="filter-option">
-                <input
-                  type="checkbox"
-                  id="filter-warning"
-                  value="warning"
-                  checked
-                />
-                <label for="filter-warning">Warning</label>
-              </div>
-              <div class="filter-option">
-                <input
-                  type="checkbox"
-                  id="filter-success"
-                  value="success"
-                  checked
-                />
-                <label for="filter-success">Success</label>
-              </div>
-              <div class="filter-option">
-                <input
-                  type="checkbox"
-                  id="filter-meeting"
-                  value="meeting"
-                  checked
-                />
-                <label for="filter-meeting">Meeting</label>
-              </div>
-              <div class="filter-option">
-                <input type="checkbox" id="filter-work" value="work" checked />
-                <label for="filter-work">Work</label>
-              </div>
-              <div class="filter-option">
-                <input type="checkbox" id="filter-none" value="none" checked />
-                <label for="filter-none">Ohne Kategorie</label>
-              </div>
+      <div class="search-filter-container">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Suche in Timeline... (Strg+F)" />
+          <button class="search-clear" id="searchClear">×</button>
+        </div>
+        <div class="filter-dropdown">
+          <button class="filter-button" id="filterButton">
+            <span>Filter</span>
+            <span id="filterCount"></span>
+          </button>
+          <div class="filter-menu" id="filterMenu">
+            <div class="filter-option">
+              <input type="checkbox" id="filter-critical" value="critical" checked />
+              <label for="filter-critical">Critical</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-warning" value="warning" checked />
+              <label for="filter-warning">Warning</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-success" value="success" checked />
+              <label for="filter-success">Success</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-meeting" value="meeting" checked />
+              <label for="filter-meeting">Meeting</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-work" value="work" checked />
+              <label for="filter-work">Work</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-none" value="none" checked />
+              <label for="filter-none">Ohne Kategorie</label>
             </div>
           </div>
         </div>
-
-        <button id="visualizeBtn">Präsentation öffnen</button>
-        <div class="keyboard-hint">
-          Strg+Enter: Präsentation | Strg+S: Speichern | Strg+F: Suche | ESC:
-          Vollbild beenden
-        </div>
-
-        <div class="save-options">
-          <button id="loadMarkdownBtn">Markdown laden</button>
-          <button id="saveMarkdownBtn">Markdown speichern</button>
-          <button id="saveHtmlBtn">HTML speichern</button>
-          <button id="savePngBtn">PNG speichern</button>
-          <button id="savePdfBtn">PDF speichern</button>
-        </div>
-        <input
-          id="loadMarkdownInput"
-          type="file"
-          accept=".md,text/markdown"
-          style="display: none"
-        />
       </div>
 
-      <!-- Output Panel -->
-      <div class="output-panel" id="outputPanel">
-        <div id="timelineOutput" class="timeline">
-          <p class="info-message">
-            Die Visualisierung deiner Ereignisse erscheint hier. Gib links Daten
-            ein und klicke auf 'Visualisieren'.
-          </p>
-        </div>
+      <button id="visualizeBtn">Präsentation öffnen</button>
+      <div class="keyboard-hint">
+        Strg+Enter: Präsentation | Strg+S: Speichern | Strg+F: Suche | Strg+V: Screenshot einfügen
       </div>
+
+      <div class="save-options">
+        <button id="loadMarkdownBtn">Markdown laden</button>
+        <button id="saveMarkdownBtn">Markdown speichern</button>
+        <button id="saveHtmlBtn">HTML speichern</button>
+        <button id="savePngBtn">PNG speichern</button>
+        <button id="savePdfBtn">PDF speichern</button>
+      </div>
+      <input id="loadMarkdownInput" type="file" accept=".md,text/markdown" style="display: none" />
     </div>
 
-    <!-- Statistics Modal -->
-    <div id="statsModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Timeline Statistiken</h2>
-          <button class="modal-close" id="statsModalClose">×</button>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value" id="totalEvents">0</div>
-            <div class="stat-label">Gesamt Ereignisse</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="upcomingEvents">0</div>
-            <div class="stat-label">Zukünftige Ereignisse</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="pastEvents">0</div>
-            <div class="stat-label">Vergangene Ereignisse</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="durationEvents">0</div>
-            <div class="stat-label">Dauer-Ereignisse</div>
-          </div>
-        </div>
-        <div class="class-distribution">
-          <h3>Verteilung nach Kategorie</h3>
-          <div id="classDistribution"></div>
-        </div>
+    <!-- Output Panel -->
+    <div class="output-panel" id="outputPanel">
+      <div id="timelineOutput" class="timeline">
+        <p class="info-message">
+          Die Visualisierung deiner Ereignisse erscheint hier. Gib links Daten ein und klicke auf 'Visualisieren'.
+        </p>
       </div>
     </div>
+  </div>
 
-    <!-- Templates Modal -->
-    <div id="templatesModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Timeline Templates</h2>
-          <button class="modal-close" id="templatesModalClose">×</button>
+  <!-- Statistics Modal -->
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Timeline Statistiken</h2>
+        <button class="modal-close" id="statsModalClose">×</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="totalEvents">0</div>
+          <div class="stat-label">Gesamt Ereignisse</div>
         </div>
-        <div class="template-grid" id="templateGrid"></div>
+        <div class="stat-card">
+          <div class="stat-value" id="upcomingEvents">0</div>
+          <div class="stat-label">Zukünftige Ereignisse</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="pastEvents">0</div>
+          <div class="stat-label">Vergangene Ereignisse</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="durationEvents">0</div>
+          <div class="stat-label">Dauer-Ereignisse</div>
+        </div>
+      </div>
+      <div class="class-distribution">
+        <h3>Verteilung nach Kategorie</h3>
+        <div id="classDistribution"></div>
       </div>
     </div>
-  </body>
+  </div>
+
+  <!-- Templates Modal -->
+  <div id="templatesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Timeline Templates</h2>
+        <button class="modal-close" id="templatesModalClose">×</button>
+      </div>
+      <div class="template-grid" id="templateGrid"></div>
+    </div>
+  </div>
+</body>
 </html>

@@ -54,12 +54,40 @@ TimelineApp.Export = {
   /**
    * Export to Markdown
    */
-  exportMarkdown(markdownContent, getCurrentTitle) {
-    const base = this.sanitizeFilename(getCurrentTitle(), "timeline-data");
+  exportMarkdown(fullMarkdown, timelineOutputContainer, getCurrentTitle) {
+    const allEvents = TimelineApp.Renderer.getAllEvents();
+    if (!allEvents || allEvents.length === 0) {
+      alert("Keine Daten zum Speichern.");
+      return;
+    }
+    
+    const visibleEventPositions = new Set();
+    timelineOutputContainer.querySelectorAll('.timeline-item:not(.filtered-out)').forEach(item => {
+        visibleEventPositions.add(parseInt(item.dataset.startPos, 10));
+    });
+
+    if (visibleEventPositions.size === 0) {
+      alert("Es gibt keine sichtbaren Timeline-Daten zum Speichern.");
+      return;
+    }
+
+    const visibleEvents = allEvents
+      .filter(event => visibleEventPositions.has(event.startPos))
+      .sort((a, b) => a.startPos - b.startPos);
+
+    const markdownChunks = visibleEvents.map(event => {
+        return fullMarkdown.substring(event.startPos, event.endPos).trim();
+    });
+
+    const title = getCurrentTitle();
+    const titleBlock = title ? `# ${title}\n\n` : "";
+    const filteredMarkdown = titleBlock + markdownChunks.join('\n\n---\n\n');
+
+    const base = this.sanitizeFilename(title, "timeline-data");
     const prefix = this.getDateTimePrefix();
     this.downloadFile(
       `${prefix}-${base}.md`,
-      markdownContent,
+      filteredMarkdown,
       "text/markdown;charset=utf-8"
     );
   },
@@ -67,13 +95,46 @@ TimelineApp.Export = {
   /**
    * Export to Markdown with images using File System Access API
    */
-  async exportMarkdownWithImages(markdownContent, getCurrentTitle) {
+  async exportMarkdownWithImages(fullMarkdown, timelineOutputContainer, getCurrentTitle) {
+    const allEvents = TimelineApp.Renderer.getAllEvents();
+    if (!allEvents || allEvents.length === 0) {
+      alert("Keine Daten zum Speichern.");
+      return;
+    }
+    
+    const visibleEventPositions = new Set();
+    timelineOutputContainer.querySelectorAll('.timeline-item:not(.filtered-out)').forEach(item => {
+        visibleEventPositions.add(parseInt(item.dataset.startPos, 10));
+    });
+
+    if (visibleEventPositions.size === 0) {
+      alert("Es gibt keine sichtbaren Timeline-Daten zum Speichern.");
+      return;
+    }
+
+    const visibleEvents = allEvents
+      .filter(event => visibleEventPositions.has(event.startPos))
+      .sort((a, b) => a.startPos - b.startPos);
+
+    const markdownChunks = visibleEvents.map(event => {
+        return fullMarkdown.substring(event.startPos, event.endPos).trim();
+    });
+
+    const title = getCurrentTitle();
+    const titleBlock = title ? `# ${title}\n\n` : "";
+    const filteredMarkdown = titleBlock + markdownChunks.join('\n\n---\n\n');
+    const markdownContent = filteredMarkdown;
+
     // Check if File System Access API is supported
     if (!('showDirectoryPicker' in window)) {
       alert('Ihr Browser unterstützt die File System Access API nicht.\n' +
             'Bitte verwenden Sie Chrome oder Edge.\n\n' +
             'Exportiere nur Markdown-Datei ohne Bilder...');
-      this.exportMarkdown(markdownContent, getCurrentTitle);
+      this.downloadFile(
+        `${this.getDateTimePrefix()}-${this.sanitizeFilename(getCurrentTitle(), "timeline-data")}.md`,
+        markdownContent,
+        "text/markdown;charset=utf-8"
+      );
       return;
     }
 
@@ -88,7 +149,11 @@ TimelineApp.Export = {
 
       if (imageNames.size === 0) {
         // No images, just save markdown
-        this.exportMarkdown(markdownContent, getCurrentTitle);
+        this.downloadFile(
+          `${this.getDateTimePrefix()}-${this.sanitizeFilename(getCurrentTitle(), "timeline-data")}.md`,
+          markdownContent,
+          "text/markdown;charset=utf-8"
+        );
         return;
       }
 
@@ -234,22 +299,26 @@ TimelineApp.Export = {
    * Export to HTML
    */
   async exportHtml(timelineOutputContainer, getCurrentTitle) {
-    const timelineHtmlContent = timelineOutputContainer.innerHTML;
+    // Clone the container so we don't modify the original
+    const clonedContainer = timelineOutputContainer.cloneNode(true);
+
+    // Remove filtered out items from the clone
+    clonedContainer.querySelectorAll('.filtered-out').forEach(el => el.remove());
+
+    const timelineHtmlContent = clonedContainer.innerHTML;
     if (
       !timelineHtmlContent.trim() ||
-      timelineHtmlContent.includes("info-message")
+      timelineHtmlContent.includes("info-message") ||
+      clonedContainer.children.length === 0
     ) {
       alert(
-        "Es gibt keine Timeline-Daten zum Speichern oder die Daten sind fehlerhaft."
+        "Es gibt keine sichtbaren Timeline-Daten zum Speichern."
       );
       return;
     }
 
     // Get current theme
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-
-    // Clone the container so we don't modify the original
-    const clonedContainer = timelineOutputContainer.cloneNode(true);
 
     // Find all images with data-filename in the CLONED container
     const images = clonedContainer.querySelectorAll('img[data-filename]');
@@ -295,7 +364,7 @@ TimelineApp.Export = {
     // Now get innerHTML from the modified clone
     const processedHtml = clonedContainer.innerHTML;
 
-    const styles = `<style>:root{--primary-color:#007bff;--secondary-color:#6c757d;--background-color:#f8f9fa;--panel-background:#fff;--text-color:#333;--line-color:#dee2e6;--dot-color:var(--primary-color);--font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}[data-theme="dark"]{--primary-color:#4da6ff;--secondary-color:#a8b2bd;--background-color:#1a1a1a;--panel-background:#2d2d2d;--text-color:#e0e0e0;--line-color:#404040;--dot-color:var(--primary-color)}body{font-family:var(--font-family);margin:20px;background-color:var(--background-color);color:var(--text-color);line-height:1.6;transition:background-color 0.3s ease,color 0.3s ease}.timeline{position:relative;padding:20px 0;max-width:800px;margin:0 auto}.timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;width:4px;background-color:var(--line-color);border-radius:2px}.timeline-item{position:relative;margin-bottom:30px;padding-left:50px}.timeline-item::before{content:'';position:absolute;left:10px;top:5px;width:24px;height:24px;background-color:var(--dot-color);border:4px solid var(--background-color);border-radius:50%;z-index:1}.timeline-item:last-child{margin-bottom:0}.timeline-content{background-color:var(--panel-background);border:1px solid var(--line-color);padding:15px 20px;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);transition:background-color 0.3s ease}.timeline-content img{max-width:100%;height:auto;border-radius:4px;margin:10px 0}.timeline-date{font-weight:bold;color:var(--primary-color);margin-bottom:8px;font-size:0.9em}.timeline-content h1,.timeline-content h2,.timeline-content h3{margin-top:0;color:var(--primary-color)}.timeline-content p{margin-bottom:0.5em}.timeline-content ul,.timeline-content ol{padding-left:20px}.timeline-content code{background-color:#e9ecef;padding:0.2em 0.4em;border-radius:3px;font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace}[data-theme="dark"] .timeline-content code{background-color:#404040}.timeline-content pre{background-color:#e9ecef;padding:10px;border-radius:3px;overflow-x:auto}[data-theme="dark"] .timeline-content pre{background-color:#404040}.timeline-content pre code{padding:0;background-color:transparent}.timeline-content blockquote{border-left:3px solid var(--primary-color);padding-left:10px;margin-left:0;color:var(--secondary-color)}.timeline-content.is-critical{background-color:#ffebee;border-left:5px solid #d32f2f;color:#444}[data-theme="dark"] .timeline-content.is-critical{background-color:#3d1f1f;color:#ffcdd2}.timeline-content.is-critical .timeline-date{color:#d32f2f}[data-theme="dark"] .timeline-content.is-critical .timeline-date{color:#ef5350}.timeline-content.is-critical h1,.timeline-content.is-critical h2,.timeline-content.is-critical h3{color:#c62828}[data-theme="dark"] .timeline-content.is-critical h1,[data-theme="dark"] .timeline-content.is-critical h2,[data-theme="dark"] .timeline-content.is-critical h3{color:#ef5350}.timeline-content.is-warning{background-color:#fff3e0;border-left:5px solid #ef6c00;color:#444}[data-theme="dark"] .timeline-content.is-warning{background-color:#3d2e1f;color:#ffe0b2}.timeline-content.is-warning .timeline-date{color:#ef6c00}[data-theme="dark"] .timeline-content.is-warning .timeline-date{color:#ff9800}.timeline-content.is-warning h1,.timeline-content.is-warning h2,.timeline-content.is-warning h3{color:#e65100}[data-theme="dark"] .timeline-content.is-warning h1,[data-theme="dark"] .timeline-content.is-warning h2,[data-theme="dark"] .timeline-content.is-warning h3{color:#ff9800}.timeline-content.is-success{background-color:#e8f5e9;border-left:5px solid #2e7d32;color:#444}[data-theme="dark"] .timeline-content.is-success{background-color:#1f3d20;color:#c8e6c9}.timeline-content.is-success .timeline-date{color:#2e7d32}[data-theme="dark"] .timeline-content.is-success .timeline-date{color:#66bb6a}.timeline-content.is-success h1,.timeline-content.is-success h2,.timeline-content.is-success h3{color:#1b5e20}[data-theme="dark"] .timeline-content.is-success h1,[data-theme="dark"] .timeline-content.is-success h2,[data-theme="dark"] .timeline-content.is-success h3{color:#66bb6a}.timeline-content.is-meeting{background-color:#f3e5f5;border-left:5px solid #6a1b9a;color:#444}[data-theme="dark"] .timeline-content.is-meeting{background-color:#2e1f3d;color:#e1bee7}.timeline-content.is-meeting .timeline-date{color:#6a1b9a}[data-theme="dark"] .timeline-content.is-meeting .timeline-date{color:#ba68c8}.timeline-content.is-meeting h1,.timeline-content.is-meeting h2,.timeline-content.is-meeting h3{color:#4a148c}[data-theme="dark"] .timeline-content.is-meeting h1,[data-theme="dark"] .timeline-content.is-meeting h2,[data-theme="dark"] .timeline-content.is-meeting h3{color:#ba68c8}.timeline-content.is-work{background-color:#e3f2fd;border-left:5px solid #1565c0;color:#333}[data-theme="dark"] .timeline-content.is-work{background-color:#1f2e3d;color:#bbdefb}.timeline-content.is-work .timeline-date{color:#1565c0}[data-theme="dark"] .timeline-content.is-work .timeline-date{color:#64b5f6}.timeline-content.is-work h1,.timeline-content.is-work h2,.timeline-content.is-work h3{color:#0d47a1}[data-theme="dark"] .timeline-content.is-work h1,[data-theme="dark"] .timeline-content.is-work h2,[data-theme="dark"] .timeline-content.is-work h3{color:#64b5f6}.timeline-title{text-align:center;color:var(--primary-color);margin:0 0 20px 0;font-size:1.6em;line-height:1.2}.filtered-out{display:none}.duration-label{display:inline-block;font-size:0.8em;color:var(--secondary-color);background-color:var(--panel-background);padding:2px 8px;border-radius:3px;margin-left:10px;border:1px solid var(--line-color)}</style>`;
+    const styles = `<style>:root{--primary-color:#007bff;--secondary-color:#6c757d;--background-color:#f8f9fa;--panel-background:#fff;--text-color:#333;--line-color:#dee2e6;--dot-color:var(--primary-color);--font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}[data-theme="dark"]{--primary-color:#4da6ff;--secondary-color:#a8b2bd;--background-color:#1a1a1a;--panel-background:#2d2d2d;--text-color:#e0e0e0;--line-color:#404040;--dot-color:var(--primary-color)}body{font-family:var(--font-family);margin:20px;background-color:var(--background-color);color:var(--text-color);line-height:1.6;transition:background-color 0.3s ease,color 0.3s ease}.timeline{position:relative;padding:20px 0;max-width:800px;margin:0 auto}.timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;width:4px;background-color:var(--line-color);border-radius:2px}.timeline-item{position:relative;margin-bottom:30px;padding-left:50px}.timeline-item::before{content:'';position:absolute;left:10px;top:5px;width:24px;height:24px;background-color:var(--dot-color);border:4px solid var(--background-color);border-radius:50%;z-index:1}.timeline-item:last-child{margin-bottom:0}.timeline-content{background-color:var(--panel-background);border:1px solid var(--line-color);padding:15px 20px;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);transition:background-color 0.3s ease}.timeline-content img{max-width:100%;height:auto;border-radius:4px;margin:10px 0}.timeline-date{font-weight:bold;color:var(--primary-color);margin-bottom:8px;font-size:0.9em}.timeline-content h1,.timeline-content h2,.timeline-content h3{margin-top:0;color:var(--primary-color)}.timeline-content p{margin-bottom:0.5em}.timeline-content ul,.timeline-content ol{padding-left:20px}.timeline-content code{background-color:#e9ecef;padding:0.2em 0.4em;border-radius:3px;font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace}[data-theme="dark"] .timeline-content code{background-color:#404040}.timeline-content pre{background-color:#e9ecef;padding:1em;border-radius:4px;overflow-x:auto}[data-theme="dark"] .timeline-content pre{background-color:#404040}.is-critical{border-left:5px solid #dc3545}.is-warning{border-left:5px solid #ffc107}.is-success{border-left:5px solid #28a745}.is-meeting{border-left:5px solid #17a2b8}.is-work{border-left:5px solid #6f42c1}.duration-label{display:block;font-size:0.8em;color:var(--secondary-color);margin-top:4px}.duration-bar{position:absolute;left:20px;top:28px;width:4px;background-color:var(--dot-color);opacity:0.5;transform:translateX(-2px)}.duration-end-marker{position:absolute;left:20px;width:16px;height:16px;background-color:var(--dot-color);border-radius:50%;transform:translate(-8px,-4px)}.filtered-out{display:none!important}.no-results-message{text-align:center;padding:20px;color:var(--secondary-color)}.timeline-title{text-align:center;color:var(--primary-color);margin-bottom:30px}body>div.timeline{padding-top:0}</style>`;
 
     const fullHtml = `<!DOCTYPE html><html lang="de" data-theme="${currentTheme}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Timeline Export</title>${styles}</head><body><div class="timeline">${processedHtml}</div></body></html>`;
     const base = this.sanitizeFilename(getCurrentTitle(), "timeline");
@@ -334,15 +403,15 @@ TimelineApp.Export = {
     if (wasInFullscreen) {
       document.body.classList.remove("fullscreen-mode");
     }
-    if (parseCallback) parseCallback();
+    if (parseCallback) await parseCallback();
 
-    const elementToCapture = outputPanel.querySelector(".timeline");
+    const originalTimeline = outputPanel.querySelector(".timeline");
     const savePngBtn = document.getElementById("savePngBtn");
 
     if (
-      !elementToCapture ||
-      !elementToCapture.innerHTML.trim() ||
-      elementToCapture.innerHTML.includes("info-message")
+      !originalTimeline ||
+      !originalTimeline.innerHTML.trim() ||
+      originalTimeline.innerHTML.includes("info-message")
     ) {
       alert(
         "Es gibt keine Timeline-Daten zum Speichern als PNG oder die Daten sind fehlerhaft."
@@ -353,6 +422,27 @@ TimelineApp.Export = {
 
     savePngBtn.textContent = "PNG wird generiert...";
     savePngBtn.disabled = true;
+
+    // --- New logic: clone and filter ---
+    const elementToCapture = originalTimeline.cloneNode(true);
+    elementToCapture.querySelectorAll('.filtered-out').forEach(el => el.remove());
+
+    // Check if there's anything visible to export
+    if (elementToCapture.children.length === 0 || !elementToCapture.textContent.trim()) {
+        alert("Es gibt keine sichtbaren Timeline-Daten zum Speichern als PNG.");
+        savePngBtn.textContent = "PNG speichern";
+        savePngBtn.disabled = false;
+        if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
+        return;
+    }
+    
+    // Style and append off-screen to ensure styles are computed
+    elementToCapture.style.position = 'absolute';
+    elementToCapture.style.left = '-9999px';
+    elementToCapture.style.top = '0';
+    elementToCapture.style.width = `${originalTimeline.offsetWidth}px`; // ensure same width
+    document.body.appendChild(elementToCapture);
+    // --- End of new logic ---
 
     const options = {
       scale: window.devicePixelRatio * 1.5,
@@ -372,12 +462,13 @@ TimelineApp.Export = {
       const prefix = this.getDateTimePrefix();
       a.download = `${prefix}-${base}.png`;
       document.body.appendChild(a);
-      a.click();
+a.click();
       document.body.removeChild(a);
     } catch (err) {
       console.error("Fehler beim Erstellen des PNGs:", err);
       alert("Fehler beim Erstellen des PNGs. Siehe Konsole für Details.");
     } finally {
+      document.body.removeChild(elementToCapture); // Clean up the clone
       savePngBtn.textContent = "PNG speichern";
       savePngBtn.disabled = false;
       if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
@@ -397,13 +488,25 @@ TimelineApp.Export = {
     if (wasInFullscreen) {
       document.body.classList.remove("fullscreen-mode");
     }
-    if (parseCallback) parseCallback();
+    if (parseCallback) await parseCallback();
 
     const savePdfBtn = document.getElementById("savePdfBtn");
     savePdfBtn.textContent = "PDF wird generiert...";
     savePdfBtn.disabled = true;
 
     try {
+      const timelineItems = outputPanel.querySelectorAll(
+        ".timeline-item:not(.filtered-out)"
+      );
+
+      if (timelineItems.length === 0) {
+        alert("Keine sichtbaren Daten für den PDF-Export gefunden.");
+        savePdfBtn.textContent = "PDF speichern";
+        savePdfBtn.disabled = false;
+        if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
+        return;
+      }
+
       const { jsPDF } = jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -417,10 +520,6 @@ TimelineApp.Export = {
       pdf.setFont(undefined, "bold");
       pdf.text(title, pageWidth / 2, yPosition, { align: "center" });
       yPosition += 15;
-
-      const timelineItems = outputPanel.querySelectorAll(
-        ".timeline-item:not(.filtered-out)"
-      );
 
       pdf.setFontSize(10);
 

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timeline Visualizer v1.2</title>
+  <title>Timeline Visualizer</title>
 
   <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -26,7 +26,7 @@
   <script src="js/export.js"></script>
   <script src="js/images.js"></script>
   <script src="js/presentation.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=2"></script>
 </head>
 
 <body>
@@ -38,8 +38,9 @@
           <button class="templates-toggle" id="templatesToggle" title="Templates">📄</button>
           <button class="stats-toggle" id="statsToggle" title="Statistiken">📊</button>
           <button class="theme-toggle" id="themeToggle" title="Theme wechseln">🌙</button>
-          <button class="help-toggle" id="helpToggle" title="Hilfe & Info">❓</button>
-          <button class="help-toggle" id="debugToggle" title="Debug Test">🪲</button>
+          <!-- DEBUG BUTTON -->
+          <button class="debug-toggle" id="debugToggle" title="Debug Test"
+            style="background-color: #ff6b6b;">🔍</button>
         </div>
         <h1>Timeline Editor</h1>
         <div style="width: 130px"></div>
@@ -166,163 +167,6 @@ Erster Meilenstein erreicht
     </div>
   </div>
 
-  <!-- Help Modal -->
-  <div id="helpModal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
-        <h2>❓ Hilfe & Informationen</h2>
-        <button class="modal-close" id="helpModalClose">×</button>
-      </div>
-      <div class="help-content">
-        <div class="help-section">
-          <h3>📝 Markdown-Syntax</h3>
-          <p>Ereignisse werden durch <code>---</code> getrennt und folgen diesem Format:</p>
-          <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">date: 2025-01-15 14:30:00
-end_date: 2025-01-20 (optional)
-class: warning (optional)
-## Titel (optional)
-Inhalt in Markdown-Format
-- Listen
-- **Fett**
-- *Kursiv*
-
----
-Nächstes Ereignis...</pre>
-        </div>
-
-        <div class="help-section">
-          <h3>📅 Datumsformate</h3>
-          <ul>
-            <li><strong>ISO:</strong> <code>2025-01-15</code> oder <code>2025-01-15 14:30:00</code></li>
-            <li><strong>Deutsch:</strong> <code>15.01.2025</code> oder <code>15.01.2025 14:30</code></li>
-            <li><strong>Quartale:</strong> <code>Q1 2025</code> oder <code>2025 Q1</code></li>
-            <li><strong>Monate:</strong> <code>Januar 2025</code> oder <code>2025 Januar</code></li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>🎨 Event-Kategorien</h3>
-          <ul>
-            <li><code>class: critical</code> - Kritische Ereignisse (rot)</li>
-            <li><code>class: warning</code> - Warnungen (orange)</li>
-            <li><code>class: success</code> - Erfolge (grün)</li>
-            <li><code>class: meeting</code> - Meetings (lila)</li>
-            <li><code>class: work</code> - Arbeit (blau)</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>🖼️ Bilder einfügen (NEU in v1.1)</h3>
-          <ul>
-            <li><strong>Drag & Drop:</strong> Ziehe Bilder direkt ins Textfeld</li>
-            <li><strong>Screenshot:</strong> Drücke <kbd>Strg+V</kbd> im Textfeld</li>
-            <li><strong>Syntax:</strong> <code>![Beschreibung](images/bild.png)</code></li>
-            <li><strong>Speicherung:</strong> Bilder werden in IndexedDB gespeichert</li>
-            <li><strong>Export:</strong> HTML enthält eingebettete Base64-Bilder</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>⌨️ Tastenkombinationen</h3>
-          <ul>
-            <li><kbd>Strg+Enter</kbd> - Präsentation öffnen/schließen</li>
-            <li><kbd>Strg+S</kbd> - Markdown speichern</li>
-            <li><kbd>Strg+F</kbd> - Suche fokussieren</li>
-            <li><kbd>Strg+V</kbd> - Screenshot einfügen</li>
-            <li><kbd>Strg+Z</kbd> - Rückgängig</li>
-            <li><kbd>Strg+Y</kbd> - Wiederherstellen</li>
-            <li><kbd>ESC</kbd> - Präsentation/Modals schließen</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>💾 Export-Optionen</h3>
-          <ul>
-            <li><strong>Markdown:</strong> Mit oder ohne Bilder-Ordner (File System Access API)</li>
-            <li><strong>HTML:</strong> Standalone-Datei mit eingebetteten Bildern (Base64)</li>
-            <li><strong>PNG:</strong> Timeline als Bild exportieren</li>
-            <li><strong>PDF:</strong> Timeline als PDF-Dokument</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>🎬 Präsentationsmodus</h3>
-          <p>Öffnet ein separates Fenster (1920×1080) für Präsentationen. Änderungen werden live synchronisiert. Filter
-            und Suche werden ebenfalls übertragen.</p>
-        </div>
-
-        <div class="help-section">
-          <h3>💡 Tipps</h3>
-          <ul>
-            <li>Verwende <code>end_date</code> für Dauer-Events mit visuellen Verbindungslinien</li>
-            <li>Klicke auf das Datum eines Events um zur Markdown-Quelle zu springen</li>
-            <li>Nutze Filter um Events nach Kategorie ein-/auszublenden</li>
-            <li>Alle Daten werden lokal im Browser gespeichert (LocalStorage + IndexedDB)</li>
-            <li>Templates bieten Startpunkte für verschiedene Anwendungsfälle</li>
-          </ul>
-        </div>
-
-        <div class="help-section changelog">
-          <h3>📋 Changelog</h3>
-
-          <div class="version-block">
-            <h4>Version 1.2 - Filter Export & Bugfixes (November 2025)</h4>
-            <ul>
-              <li>✨ <strong>Export-Filter:</strong> Alle Exporte (HTML, MD, PNG, PDF) berücksichtigen nun die aktiven Filter.</li>
-              <li>🐛 <strong>Bugfix:</strong> Ein Timing-Fehler wurde behoben, der verhinderte, dass Filter korrekt auf Exporte angewendet wurden.</li>
-            </ul>
-          </div>
-
-          <div class="version-block">
-            <h4>Version 1.1 - Bild-Support (Januar 2025)</h4>
-            <ul>
-              <li>✨ <strong>Bilder per Drag & Drop einfügen:</strong> Ziehe Bilder direkt ins Textfeld</li>
-              <li>✨ <strong>Screenshot-Paste:</strong> Strg+V fügt Screenshots direkt ein</li>
-              <li>💾 <strong>IndexedDB-Speicherung:</strong> Bilder werden lokal gespeichert</li>
-              <li>📤 <strong>HTML-Export mit Bildern:</strong> Base64-eingebettet für Standalone-Dateien</li>
-              <li>📤 <strong>Markdown-Export mit images/:</strong> Ordnerstruktur mit File System Access API</li>
-              <li>🎨 <strong>Bilder in Präsentation:</strong> Werden automatisch angezeigt</li>
-              <li>🌓 <strong>Theme-Support:</strong> Hell/Dunkel-Modus auch im HTML-Export</li>
-              <li>🐛 <strong>Bugfixes:</strong> DOM-Rendering optimiert, Konsolenfehler behoben</li>
-            </ul>
-            <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 10px;">
-              <em>Bilder werden als <code>![alt](images/filename.png)</code> referenziert für Git-Kompatibilität.</em>
-            </p>
-          </div>
-
-          <div class="version-block">
-            <h4>Version 1.0 - Initial Release</h4>
-            <ul>
-              <li>📝 Markdown-basierte Timeline-Erstellung</li>
-              <li>🎨 Flexible Event-Kategorien mit Farbcodierung</li>
-              <li>📅 Multiple Datumsformate (ISO, Deutsch, Quartale, Monate)</li>
-              <li>⏱️ Dauer-Events mit visuellen Verbindungen</li>
-              <li>🔍 Live-Suche mit Highlighting</li>
-              <li>🎯 Filter nach Kategorien</li>
-              <li>📊 Statistik-Dashboard</li>
-              <li>📋 Vorgefertigte Templates</li>
-              <li>💾 Auto-Save mit LocalStorage</li>
-              <li>⏮️ Undo/Redo-Funktion</li>
-              <li>🌓 Hell/Dunkel-Theme</li>
-              <li>🎬 Präsentationsmodus (1920×1080)</li>
-              <li>📤 Export: Markdown, HTML, PNG, PDF</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="help-section"
-          style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary-color);">
-          <h3>ℹ️ Über Timeline Visualizer</h3>
-          <p><strong>Version:</strong> 1.2</p>
-          <p><strong>Technologie:</strong> Vanilla JavaScript, Marked.js, IndexedDB</p>
-          <p><strong>Browser-Anforderungen:</strong> Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</p>
-          <p><strong>Datenschutz:</strong> Alle Daten werden nur lokal im Browser gespeichert. Keine
-            Server-Kommunikation.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Debug Modal -->
   <div id="debugModal" class="modal">
     <div class="modal-content">
@@ -335,7 +179,7 @@ Nächstes Ereignis...</pre>
         <p>Teste...</p>
       </div>
       <button id="testDropZone"
-        style="margin-top: 15px; width: 100%; padding: 40px; border: 3px dashed #007bff; background: #363636; border-radius: 8px; cursor: pointer;">
+        style="margin-top: 15px; width: 100%; padding: 40px; border: 3px dashed #007bff; background: #f0f8ff; border-radius: 8px; cursor: pointer;">
         📎 Bild hierher ziehen zum Testen
       </button>
     </div>
@@ -356,17 +200,20 @@ Nächstes Ereignis...</pre>
       }
 
       try {
+        // Test 1: Basic Info
         log(`<strong>Browser:</strong> ${navigator.userAgent}`);
         log(`<strong>URL:</strong> ${window.location.href}`);
         log(`<strong>Origin:</strong> ${window.location.origin}`);
         log(`<strong>Protocol:</strong> ${window.location.protocol}`);
 
+        // Test 2: IndexedDB Support
         if (!window.indexedDB) {
           log('IndexedDB wird nicht unterstützt!', true);
           return;
         }
         log('IndexedDB wird unterstützt');
 
+        // Test 3: Cookies/LocalStorage
         try {
           localStorage.setItem('test', 'test');
           localStorage.removeItem('test');
@@ -375,34 +222,41 @@ Nächstes Ereignis...</pre>
           log('LocalStorage blockiert: ' + e.message, true);
         }
 
+        // Test 4: TimelineApp.Images
         if (!window.TimelineApp || !window.TimelineApp.Images) {
           log('TimelineApp.Images nicht geladen!', true);
           return;
         }
         log('TimelineApp.Images ist geladen');
 
+        // Test 5: Initialize IndexedDB
         try {
           await TimelineApp.Images.init();
           log('IndexedDB erfolgreich initialisiert');
 
+          // Test 6: Database Info
           if (TimelineApp.Images.db) {
             log(`Database Name: ${TimelineApp.Images.db.name}`);
             log(`Database Version: ${TimelineApp.Images.db.version}`);
           }
         } catch (e) {
           log('IndexedDB Initialisierung fehlgeschlagen: ' + e.message, true);
+          log('Error Details: ' + JSON.stringify(e), true);
           return;
         }
 
+        // Test 7: Try to store a test image
         try {
           const testBlob = new Blob(['test'], { type: 'image/png' });
           const testName = 'test_' + Date.now() + '.png';
           await TimelineApp.Images.storeImage(testName, testBlob);
           log('Test-Bild erfolgreich gespeichert');
 
+          // Test 8: Try to retrieve it
           const retrieved = await TimelineApp.Images.getImage(testName);
           if (retrieved) {
             log('Test-Bild erfolgreich abgerufen');
+            // Clean up
             await TimelineApp.Images.deleteImage(testName);
             log('Test-Bild erfolgreich gelöscht');
           } else {
@@ -412,12 +266,14 @@ Nächstes Ereignis...</pre>
           log('Fehler beim Test-Bild: ' + e.message, true);
         }
 
+        // Test 9: Drag & Drop API
         if ('FileReader' in window) {
           log('FileReader API verfügbar');
         } else {
           log('FileReader API nicht verfügbar', true);
         }
 
+        // Test 10: Clipboard API
         if (navigator.clipboard) {
           log('Clipboard API verfügbar');
         } else {
@@ -432,34 +288,8 @@ Nächstes Ereignis...</pre>
       }
     }
 
-    // Setup help and debug modals
+    // Setup debug button and modal
     document.addEventListener('DOMContentLoaded', () => {
-      // Help Modal
-      const helpToggle = document.getElementById('helpToggle');
-      const helpModal = document.getElementById('helpModal');
-      const helpModalClose = document.getElementById('helpModalClose');
-
-      if (helpToggle) {
-        helpToggle.addEventListener('click', () => {
-          helpModal.classList.add('show');
-        });
-      }
-
-      if (helpModalClose) {
-        helpModalClose.addEventListener('click', () => {
-          helpModal.classList.remove('show');
-        });
-      }
-
-      if (helpModal) {
-        helpModal.addEventListener('click', (e) => {
-          if (e.target === helpModal) {
-            helpModal.classList.remove('show');
-          }
-        });
-      }
-
-      // Debug Modal
       const debugToggle = document.getElementById('debugToggle');
       const debugModal = document.getElementById('debugModal');
       const debugModalClose = document.getElementById('debugModalClose');
@@ -486,6 +316,7 @@ Nächstes Ereignis...</pre>
         });
       }
 
+      // Test drop zone
       if (testDropZone) {
         testDropZone.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -536,119 +367,6 @@ Nächstes Ereignis...</pre>
       }
     });
   </script>
-
-  <style>
-    /* Help Modal Specific Styles */
-    .help-content {
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-
-    .help-section {
-      margin-bottom: 25px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .help-section:last-child {
-      border-bottom: none;
-    }
-
-    .help-section h3 {
-      color: var(--primary-color);
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-
-    .help-section ul {
-      margin: 10px 0;
-      padding-left: 25px;
-    }
-
-    .help-section li {
-      margin: 8px 0;
-      line-height: 1.6;
-    }
-
-    .help-section code {
-      background-color: var(--hover-bg);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
-    }
-
-    .help-section kbd {
-      background-color: #f5f5f5;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-      padding: 2px 6px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85em;
-      white-space: nowrap;
-    }
-
-    [data-theme="dark"] .help-section kbd {
-      background-color: #3a3a3a;
-      border-color: #555;
-      color: #e0e0e0;
-    }
-
-    .help-section pre {
-      background: var(--hover-bg);
-      padding: 12px;
-      border-radius: 5px;
-      overflow-x: auto;
-      font-size: 0.9em;
-      line-height: 1.4;
-      color: var(--text-color);
-    }
-
-    [data-theme="dark"] .help-section pre {
-      background: #2a2a2a;
-      color: #e0e0e0;
-    }
-
-    .changelog .version-block {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: var(--hover-bg);
-      border-radius: 8px;
-      border-left: 4px solid var(--primary-color);
-    }
-
-    .changelog .version-block h4 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      color: var(--primary-color);
-    }
-
-    .changelog .version-block ul {
-      margin: 5px 0;
-    }
-
-    .help-toggle {
-      background: none;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1.2em;
-      transition: all 0.3s ease;
-    }
-
-    .help-toggle:hover {
-      background-color: var(--hover-bg);
-    }
-
-    .help-toggle.active {
-      background-color: var(--primary-color);
-      color: white;
-      border-color: var(--primary-color);
-    }
-  </style>
 </body>
 
 </html>

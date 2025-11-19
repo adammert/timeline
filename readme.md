@@ -683,5 +683,5 @@ Für Verbesserungsvorschläge oder Bug-Reports erstellen Sie bitte ein Issue ode
 
 ---
 
-**Version:** 2.0.0 (Modular)  
-**Letzte Aktualisierung:** 2025-01-04
+**Version:** 1.2 (Modular)  
+**Letzte Aktualisierung:** 2025-11-19

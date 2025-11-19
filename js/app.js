@@ -3,12 +3,12 @@
  * Coordinates all modules and handles user interactions
  */
 
-(function() {
+(function () {
   "use strict";
 
   // DOM Elements
   let elements = {};
-  
+
   // Timeouts
   let debounceTimeoutId;
   let autosaveTimeoutId;
@@ -39,9 +39,9 @@
   async function initImages() {
     try {
       await TimelineApp.Images.init();
-      console.log('Image management initialized');
+      console.log("Image management initialized");
     } catch (e) {
-      console.error('Failed to initialize images:', e);
+      console.error("Failed to initialize images:", e);
     }
   }
 
@@ -72,7 +72,7 @@
       templatesToggle: document.getElementById("templatesToggle"),
       templatesModal: document.getElementById("templatesModal"),
       templatesModalClose: document.getElementById("templatesModalClose"),
-      templateGrid: document.getElementById("templateGrid")
+      templateGrid: document.getElementById("templateGrid"),
     };
   }
 
@@ -109,7 +109,7 @@
   function toggleTheme() {
     const newTheme = currentTheme === "light" ? "dark" : "light";
     applyTheme(newTheme);
-    
+
     // Update presentation window if open
     if (TimelineApp.Presentation.isOpen()) {
       TimelineApp.Presentation.sendThemeUpdate(newTheme);
@@ -148,11 +148,11 @@
    */
   function updateVisualizeButton() {
     if (TimelineApp.Presentation.isOpen()) {
-      elements.visualizeBtn.textContent = 'Präsentation schließen';
-      elements.visualizeBtn.style.backgroundColor = '#dc3545';
+      elements.visualizeBtn.textContent = "Präsentation schließen";
+      elements.visualizeBtn.style.backgroundColor = "#dc3545";
     } else {
-      elements.visualizeBtn.textContent = 'Präsentation öffnen';
-      elements.visualizeBtn.style.backgroundColor = '';
+      elements.visualizeBtn.textContent = "Präsentation öffnen";
+      elements.visualizeBtn.style.backgroundColor = "";
     }
   }
 
@@ -172,13 +172,13 @@
     // File operations
     elements.loadMarkdownBtn.addEventListener("click", async () => {
       // Try using File System Access API first
-      if ('showOpenFilePicker' in window) {
+      if ("showOpenFilePicker" in window) {
         const useFileSystem = confirm(
-          'Möchten Sie eine Markdown-Datei mit Bildern laden?\n\n' +
-          'Ja = Ordner-basiertes Laden (mit Bildern)\n' +
-          'Nein = Einzelne Datei auswählen'
+          "Möchten Sie eine Markdown-Datei mit Bildern laden?\n\n" +
+            "Ja = Ordner-basiertes Laden (mit Bildern)\n" +
+            "Nein = Einzelne Datei auswählen"
         );
-        
+
         if (useFileSystem) {
           const markdown = await TimelineApp.Export.loadMarkdownWithImages();
           if (markdown) {
@@ -186,7 +186,7 @@
             TimelineApp.Storage.saveToHistory(markdown);
             TimelineApp.Storage.saveToLocalStorage(markdown);
             await parseAndRenderTimeline();
-            
+
             if (TimelineApp.Presentation.isOpen()) {
               TimelineApp.Presentation.sendMarkdownUpdate(markdown);
             }
@@ -194,7 +194,7 @@
           return;
         }
       }
-      
+
       // Fallback to standard file input
       elements.loadMarkdownInput.value = "";
       elements.loadMarkdownInput.click();
@@ -219,7 +219,7 @@
   function handleVisualize() {
     const isOpen = TimelineApp.Presentation.toggle();
     updateVisualizeButton();
-    
+
     // Also parse and render in main window
     parseAndRenderTimeline();
   }
@@ -235,10 +235,12 @@
       if (!document.body.classList.contains("fullscreen-mode")) {
         parseAndRenderTimeline();
       }
-      
+
       // Update presentation window if open (markdown only, theme unchanged)
       if (TimelineApp.Presentation.isOpen()) {
-        TimelineApp.Presentation.sendMarkdownUpdate(elements.markdownInput.value);
+        TimelineApp.Presentation.sendMarkdownUpdate(
+          elements.markdownInput.value
+        );
       }
     }, TimelineApp.Config.DEBOUNCE_DELAY);
 
@@ -262,12 +264,12 @@
       TimelineApp.Storage.saveToHistory(text);
       TimelineApp.Storage.saveToLocalStorage(text);
       parseAndRenderTimeline();
-      
+
       // Update presentation window if open
       if (TimelineApp.Presentation.isOpen()) {
         TimelineApp.Presentation.sendMarkdownUpdate(text);
       }
-      
+
       if (!document.body.classList.contains("fullscreen-mode")) {
         elements.outputPanel.scrollTop = 0;
       }
@@ -282,28 +284,37 @@
    * Handle save markdown
    */
   async function handleSaveMarkdown() {
-    const hasImages = /!\[([^\]]*)\]\(images\/([^)]+)\)/.test(elements.markdownInput.value);
-    
+    if (!document.body.classList.contains("fullscreen-mode")) {
+      await parseAndRenderTimeline();
+    }
+
+    const fullMarkdown = elements.markdownInput.value;
+    const hasImages = /!\[([^\]]*)\]\(images\/([^)]+)\)/.test(
+      fullMarkdown
+    );
+
     if (hasImages) {
       const useFileSystem = confirm(
-        'Diese Timeline enthält Bilder.\n\n' +
-        'Möchten Sie mit Bildern speichern? (Chrome/Edge erforderlich)\n\n' +
-        'Ja = Ordner mit Markdown + images/\n' +
-        'Nein = Nur Markdown-Datei'
+        "Diese Timeline enthält Bilder.\n\n" +
+          "Möchten Sie mit Bildern speichern? (Chrome/Edge erforderlich)\n\n" +
+          "Ja = Ordner mit Markdown + images/\n" +
+          "Nein = Nur Markdown-Datei"
       );
-      
+
       if (useFileSystem) {
         await TimelineApp.Export.exportMarkdownWithImages(
-          elements.markdownInput.value,
+          fullMarkdown,
+          elements.timelineOutput,
           getCurrentTitle
         );
         return;
       }
     }
-    
+
     // Standard markdown export
     TimelineApp.Export.exportMarkdown(
-      elements.markdownInput.value,
+      fullMarkdown,
+      elements.timelineOutput,
       getCurrentTitle
     );
   }
@@ -311,9 +322,9 @@
   /**
    * Handle save HTML
    */
-  function handleSaveHtml() {
+  async function handleSaveHtml() {
     if (!document.body.classList.contains("fullscreen-mode")) {
-      parseAndRenderTimeline();
+      await parseAndRenderTimeline();
     }
     TimelineApp.Export.exportHtml(elements.timelineOutput, getCurrentTitle);
   }
@@ -379,7 +390,11 @@
     }
 
     // Ctrl+Z - Undo
-    if ((event.ctrlKey || event.metaKey) && event.key === "z" && !event.shiftKey) {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key === "z" &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
       TimelineApp.Storage.undo(elements.markdownInput, parseAndRenderTimeline);
     }
@@ -414,7 +429,7 @@
   }
 
   /**
-   * Setup drag and drop
+   * Setup drag and drop - FIXED VERSION
    */
   function setupDragAndDrop() {
     elements.markdownInput.addEventListener("dragover", (e) => {
@@ -435,35 +450,55 @@
       elements.markdownInput.classList.remove("drag-over");
 
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        // Check if any images
-        const hasImages = await TimelineApp.Images.handleDrop(e, elements.markdownInput);
-        
-        if (!hasImages) {
-          // Handle markdown files as before
-          const file = files[0];
-          if (
-            file.name.endsWith(".md") ||
-            file.type === "text/markdown" ||
-            file.type === "text/plain"
-          ) {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-              elements.markdownInput.value = evt.target.result;
-              TimelineApp.Storage.saveToHistory(evt.target.result);
-              TimelineApp.Storage.saveToLocalStorage(evt.target.result);
-              parseAndRenderTimeline();
-              
-              // Update presentation window if open
-              if (TimelineApp.Presentation.isOpen()) {
-                TimelineApp.Presentation.sendMarkdownUpdate(evt.target.result);
-              }
-            };
-            reader.readAsText(file, "utf-8");
-          } else {
-            alert("Bitte nur .md, Text-Dateien oder Bilder ablegen.");
-          }
+      if (files.length === 0) return;
+
+      console.log("Files dropped:", files.length);
+
+      // First, check if there are any images
+      const hasImages = Array.from(files).some((file) =>
+        file.type.startsWith("image/")
+      );
+
+      if (hasImages) {
+        // Handle images using the Images module
+        console.log("Processing images...");
+        const imagesHandled = await TimelineApp.Images.handleDrop(
+          e,
+          elements.markdownInput
+        );
+
+        if (imagesHandled) {
+          console.log("Images successfully handled");
+          return; // Images were processed, we're done
         }
+      }
+
+      // No images or image handling failed - check for markdown files
+      const file = files[0];
+      console.log("Checking file:", file.name, file.type);
+
+      if (
+        file.name.endsWith(".md") ||
+        file.type === "text/markdown" ||
+        file.type === "text/plain"
+      ) {
+        console.log("Loading markdown file...");
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          elements.markdownInput.value = evt.target.result;
+          TimelineApp.Storage.saveToHistory(evt.target.result);
+          TimelineApp.Storage.saveToLocalStorage(evt.target.result);
+          parseAndRenderTimeline();
+
+          // Update presentation window if open
+          if (TimelineApp.Presentation.isOpen()) {
+            TimelineApp.Presentation.sendMarkdownUpdate(evt.target.result);
+          }
+        };
+        reader.readAsText(file, "utf-8");
+      } else if (!hasImages) {
+        // Only show error if it's not an image and not a markdown file
+        alert("Bitte nur .md, Text-Dateien oder Bilder ablegen.");
       }
     });
 
@@ -484,7 +519,7 @@
       clearTimeout(searchTimeoutId);
       searchTimeoutId = setTimeout(() => {
         TimelineApp.Search.applySearchAndFilter(query, elements.timelineOutput);
-        
+
         // Update presentation window if open
         if (TimelineApp.Presentation.isOpen()) {
           TimelineApp.Presentation.sendFiltersUpdate();
@@ -496,7 +531,7 @@
       elements.searchInput.value = "";
       elements.searchClear.classList.remove("visible");
       TimelineApp.Search.applySearchAndFilter("", elements.timelineOutput);
-      
+
       // Update presentation window if open
       if (TimelineApp.Presentation.isOpen()) {
         TimelineApp.Presentation.sendFiltersUpdate();
@@ -509,21 +544,29 @@
     });
 
     document.addEventListener("click", (e) => {
-      if (!elements.filterMenu.contains(e.target) && e.target !== elements.filterButton) {
+      if (
+        !elements.filterMenu.contains(e.target) &&
+        e.target !== elements.filterButton
+      ) {
         elements.filterMenu.classList.remove("show");
       }
     });
 
-    const filterCheckboxes = elements.filterMenu.querySelectorAll('input[type="checkbox"]');
+    const filterCheckboxes = elements.filterMenu.querySelectorAll(
+      'input[type="checkbox"]'
+    );
     filterCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener("change", () => {
         TimelineApp.Search.toggleFilter(checkbox.value, checkbox.checked);
-        TimelineApp.Search.updateFilterButton(elements.filterButton, elements.filterCount);
+        TimelineApp.Search.updateFilterButton(
+          elements.filterButton,
+          elements.filterCount
+        );
         TimelineApp.Search.applySearchAndFilter(
           elements.searchInput.value,
           elements.timelineOutput
         );
-        
+
         // Update presentation window if open
         if (TimelineApp.Presentation.isOpen()) {
           TimelineApp.Presentation.sendFiltersUpdate();
@@ -531,7 +574,10 @@
       });
     });
 
-    TimelineApp.Search.updateFilterButton(elements.filterButton, elements.filterCount);
+    TimelineApp.Search.updateFilterButton(
+      elements.filterButton,
+      elements.filterCount
+    );
   }
 
   /**
@@ -614,12 +660,12 @@
       TimelineApp.Storage.saveToHistory(template.content);
       TimelineApp.Storage.saveToLocalStorage(template.content);
       parseAndRenderTimeline();
-      
+
       // Update presentation window if open
       if (TimelineApp.Presentation.isOpen()) {
         TimelineApp.Presentation.sendMarkdownUpdate(template.content);
       }
-      
+
       elements.templatesModal.classList.remove("show");
       elements.templatesToggle.classList.remove("active");
     }

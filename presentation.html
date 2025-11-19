@@ -350,6 +350,22 @@
       }
       
       /**
+       * Helper: return localized weekday name
+       */
+      function getWeekdayLabel(date) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) {
+          return '';
+        }
+
+        try {
+          return date.toLocaleDateString('de-DE', { weekday: 'long' });
+        } catch (error) {
+          console.warn('Failed to format weekday', error);
+          return '';
+        }
+      }
+
+      /**
        * Render single event
        */
       function renderEvent(event, index, allEvents) {
@@ -363,21 +379,30 @@
         if (event.date.getTime() === 0) {
           dateDiv.textContent = 'Fehlerhaftes Event';
           dateDiv.style.color = 'red';
-        } else if (event.displayDateString) {
-          dateDiv.textContent = event.displayDateString;
         } else {
-          let formattedDate = event.date.toLocaleDateString('de-DE', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          });
-          if (event.explicitTimeProvided) {
-            formattedDate += ' ' + event.date.toLocaleTimeString('de-DE', {
-              hour: '2-digit',
-              minute: '2-digit'
+          const weekdayLabel = getWeekdayLabel(event.date);
+
+          if (event.displayDateString) {
+            dateDiv.textContent = weekdayLabel
+              ? event.displayDateString + ' (' + weekdayLabel + ')'
+              : event.displayDateString;
+          } else {
+            let formattedDate = event.date.toLocaleDateString('de-DE', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
             });
+            if (event.explicitTimeProvided) {
+              formattedDate += ' ' + event.date.toLocaleTimeString('de-DE', {
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+            if (weekdayLabel) {
+              formattedDate += ' (' + weekdayLabel + ')';
+            }
+            dateDiv.textContent = formattedDate;
           }
-          dateDiv.textContent = formattedDate;
         }
         
         if (event.endDate && event.date.getTime() !== 0) {

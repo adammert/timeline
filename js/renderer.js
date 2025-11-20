@@ -88,6 +88,11 @@ TimelineApp.Renderer = {
         // Mark last item in each lane to hide connecting line
         this.markLastItemsPerLane(timelineOutputContainer, uniqueGroups);
 
+        // Calculate dynamic connection lines after DOM is fully rendered
+        setTimeout(() => {
+          this.calculateConnectionLines(timelineOutputContainer);
+        }, 100);
+
         this.addTodayMarker(events, timelineOutputContainer);
       } else {
         // Linear mode rendering
@@ -306,6 +311,47 @@ TimelineApp.Renderer = {
     // Mark last items
     Object.values(lastItemsPerGroup).forEach(item => {
       item.classList.add("lane-last-item");
+    });
+  },
+
+  /**
+   * Calculate and set dynamic connection line heights for swimlane items
+   */
+  calculateConnectionLines(container) {
+    const timelineItems = Array.from(container.querySelectorAll(".timeline-item"));
+
+    // Group items by lane
+    const itemsByLane = {};
+    timelineItems.forEach(item => {
+      const group = item.dataset.laneGroup;
+      if (group) {
+        if (!itemsByLane[group]) {
+          itemsByLane[group] = [];
+        }
+        itemsByLane[group].push(item);
+      }
+    });
+
+    // For each lane, calculate connection line heights
+    Object.keys(itemsByLane).forEach(group => {
+      const laneItems = itemsByLane[group];
+
+      for (let i = 0; i < laneItems.length - 1; i++) {
+        const currentItem = laneItems[i];
+        const nextItem = laneItems[i + 1];
+
+        // Calculate vertical distance between current item and next item in same lane
+        const currentTop = currentItem.offsetTop;
+        const nextTop = nextItem.offsetTop;
+        const distance = nextTop - currentTop;
+
+        // Set CSS variable for connection line height
+        // Subtract 29px (top offset of ::after) to get the correct height
+        const lineHeight = distance - 29;
+        if (lineHeight > 0) {
+          currentItem.style.setProperty('--connection-line-height', `${lineHeight}px`);
+        }
+      }
     });
   },
 

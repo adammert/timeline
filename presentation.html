@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,77 +11,101 @@
     /* Presentation-specific styles */
     body {
       margin: 0;
-      padding: 40px 60px;
+      padding: 50px 70px;
       overflow-y: auto;
-      background-color: var(--panel-background);
+      background-color: var(--background-color);
     }
-    
+
     .presentation-container {
-      max-width: 1200px;
+      max-width: 1300px;
       margin: 0 auto;
     }
-    
+
     .timeline {
       max-width: 100%;
     }
-    
-    /* Larger fonts for presentation */
+
+    /* Enhanced fonts for presentation */
     .timeline-title {
       font-size: 2.5em;
-      margin-bottom: 40px;
+      margin-bottom: 50px;
+      font-weight: 700;
     }
-    
+
     .timeline-item {
-      padding-left: 80px;
-      margin-bottom: 40px;
+      padding-left: 75px;
+      margin-bottom: 45px;
     }
-    
+
     .timeline-item::before {
-      left: 20px;
+      left: 17px;
       width: 32px;
       height: 32px;
       border-width: 5px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
-    
+
     .timeline::before {
-      left: 35px;
-      width: 6px;
+      left: 32px;
+      width: 5px;
     }
-    
+
     .timeline-date {
-      font-size: 1.2em;
+      font-size: 1.15em;
       margin-bottom: 12px;
+      font-weight: 600;
     }
-    
+
     .timeline-content {
       font-size: 1.1em;
-      padding: 20px 25px;
-      border-radius: 8px;
+      padding: 22px 28px;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
     }
-    
+
+    .timeline-content:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
     .timeline-content h1 {
-      font-size: 1.8em;
+      font-size: 1.75em;
+      margin-bottom: 0.6em;
     }
-    
+
     .timeline-content h2 {
       font-size: 1.5em;
+      margin-bottom: 0.6em;
     }
-    
+
     .timeline-content h3 {
       font-size: 1.3em;
+      margin-bottom: 0.6em;
     }
-    
+
+    .timeline-content p {
+      margin-bottom: 0.9em;
+      line-height: 1.7;
+    }
+
     .duration-bar {
-      left: 36px;
+      left: 34px;
     }
-    
+
     .duration-end-marker {
-      left: 20px;
+      left: 17px;
       width: 32px;
       height: 32px;
       border-width: 4px;
     }
-    
+
+    .duration-label {
+      font-size: 0.85em;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
     /* Loading indicator */
     .loading-message {
       text-align: center;
@@ -88,12 +113,12 @@
       color: var(--secondary-color);
       font-size: 1.5em;
     }
-    
+
     /* Connection status */
     .connection-status {
       position: fixed;
-      top: 10px;
-      right: 10px;
+      top: 15px;
+      right: 15px;
       padding: 8px 15px;
       background-color: var(--panel-background);
       border: 1px solid var(--border-color);
@@ -102,10 +127,10 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       z-index: 1000;
     }
-    
+
     .status-indicator {
       width: 10px;
       height: 10px;
@@ -113,24 +138,62 @@
       background-color: #4caf50;
       animation: pulse 2s infinite;
     }
-    
+
     .status-indicator.disconnected {
       background-color: #f44336;
       animation: none;
     }
-    
+
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.6;
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      body {
+        padding: 40px 60px;
+      }
+
+      .timeline-title {
+        font-size: 2.2em;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 30px 40px;
+      }
+
+      .timeline-title {
+        font-size: 1.8em;
+      }
+
+      .timeline-item {
+        padding-left: 60px;
+      }
+
+      .timeline-content {
+        font-size: 1em;
+        padding: 18px 20px;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="connection-status">
     <div class="status-indicator" id="statusIndicator"></div>
     <span id="statusText">Verbunden</span>
   </div>
-  
+
   <div class="presentation-container">
     <div id="timelineOutput" class="timeline">
       <div class="loading-message">
@@ -144,9 +207,9 @@
   <script src="js/images.js"></script>
   <script>
     // Presentation Window Script
-    (function() {
+    (function () {
       'use strict';
-      
+
       const timelineOutput = document.getElementById('timelineOutput');
       const statusIndicator = document.getElementById('statusIndicator');
       const statusText = document.getElementById('statusText');
@@ -156,18 +219,18 @@
       let currentTheme = 'light';
       let activeFilters = new Set(['critical', 'warning', 'success', 'meeting', 'work', 'none']);
       let currentSearchQuery = '';
-      
+
       /**
        * Initialize BroadcastChannel
        */
       function initChannel() {
         try {
           channel = new BroadcastChannel('timeline_presentation');
-          
+
           channel.onmessage = (event) => {
             lastUpdate = Date.now();
             updateConnectionStatus(true);
-            
+
             if (event.data.type === 'update') {
               renderTimeline(event.data.markdown);
             } else if (event.data.type === 'ping') {
@@ -193,10 +256,10 @@
               renderTimeline(event.data.markdown);
             }
           };
-          
+
           // Request initial data
           channel.postMessage({ type: 'request_data' });
-          
+
           // Check connection status periodically
           connectionCheckInterval = setInterval(() => {
             const timeSinceLastUpdate = Date.now() - lastUpdate;
@@ -204,24 +267,24 @@
               updateConnectionStatus(false);
             }
           }, 2000);
-          
+
         } catch (e) {
           console.error('BroadcastChannel nicht unterstützt:', e);
           timelineOutput.innerHTML = '<div class="loading-message">Fehler: BroadcastChannel API nicht unterstützt.</div>';
         }
       }
-      
+
       /**
        * Apply search and filter to timeline
        */
       function applySearchAndFilter() {
         const timelineItems = timelineOutput.querySelectorAll('.timeline-item');
         let visibleCount = 0;
-        
+
         timelineItems.forEach((item) => {
           const content = item.querySelector('.timeline-content');
           if (!content) return;
-          
+
           // Determine event class
           let eventClass = 'none';
           const validClasses = ['critical', 'warning', 'success', 'meeting', 'work'];
@@ -230,17 +293,17 @@
               eventClass = cls;
             }
           });
-          
+
           // Check filter
           const passesFilter = activeFilters.has(eventClass);
-          
+
           // Check search
           let passesSearch = true;
           if (currentSearchQuery) {
             const textContent = item.textContent.toLowerCase();
             passesSearch = textContent.includes(currentSearchQuery.toLowerCase());
           }
-          
+
           // Apply visibility
           if (passesFilter && passesSearch) {
             item.classList.remove('filtered-out');
@@ -249,13 +312,13 @@
             item.classList.add('filtered-out');
           }
         });
-        
+
         // Show/hide no results message
         const existingMessage = timelineOutput.querySelector('.no-results-message');
         if (existingMessage) {
           existingMessage.remove();
         }
-        
+
         if (visibleCount === 0 && timelineItems.length > 0) {
           const message = document.createElement('div');
           message.className = 'no-results-message';
@@ -269,7 +332,7 @@
           timelineOutput.appendChild(message);
         }
       }
-      
+
       /**
        * Apply theme to presentation window
        */
@@ -278,7 +341,7 @@
         currentTheme = theme;
         document.documentElement.setAttribute('data-theme', theme);
       }
-      
+
       /**
        * Update connection status indicator
        */
@@ -291,7 +354,7 @@
           statusText.textContent = 'Getrennt';
         }
       }
-      
+
       /**
        * Render timeline from markdown
        */
@@ -300,27 +363,27 @@
           timelineOutput.innerHTML = '<div class="loading-message">Keine Daten vorhanden.</div>';
           return;
         }
-        
+
         const parsed = TimelineApp.Parser.extractTitleFromMarkdown(markdown);
         const currentTitle = parsed.title;
         const bodyText = parsed.body || '';
         const bodyOffset = markdown.indexOf(bodyText);
-        
+
         if (!bodyText.trim()) {
           timelineOutput.innerHTML = '<div class="loading-message">Bitte gib Daten im Hauptfenster ein.</div>';
           return;
         }
-        
+
         const events = TimelineApp.Parser.parseEvents(bodyText, bodyOffset);
-        
+
         if (events.length === 0) {
           timelineOutput.innerHTML = '<div class="loading-message">Keine gültigen Ereignisse gefunden.</div>';
           return;
         }
-        
+
         events.sort((a, b) => a.date - b.date);
         timelineOutput.innerHTML = '';
-        
+
         // Add title
         if (currentTitle) {
           const titleEl = document.createElement('h1');
@@ -328,15 +391,15 @@
           titleEl.textContent = currentTitle;
           timelineOutput.appendChild(titleEl);
         }
-        
+
         // Render events
         events.forEach((event, index) => {
           renderEvent(event, index, events);
         });
-        
+
         // Add today marker
         addTodayMarker(events);
-        
+
         // Add duration bars and replace images after DOM is ready
         setTimeout(async () => {
           addDurationBars(events);
@@ -348,7 +411,7 @@
           applySearchAndFilter();
         }, 50);
       }
-      
+
       /**
        * Helper: return localized weekday name
        */
@@ -372,10 +435,10 @@
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('timeline-item');
         if (event.endDate) itemDiv.classList.add('has-duration');
-        
+
         const dateDiv = document.createElement('div');
         dateDiv.classList.add('timeline-date');
-        
+
         if (event.date.getTime() === 0) {
           dateDiv.textContent = 'Fehlerhaftes Event';
           dateDiv.style.color = 'red';
@@ -404,7 +467,7 @@
             dateDiv.textContent = formattedDate;
           }
         }
-        
+
         if (event.endDate && event.date.getTime() !== 0) {
           const durationSpan = document.createElement('span');
           durationSpan.className = 'duration-label';
@@ -414,15 +477,15 @@
           );
           dateDiv.appendChild(durationSpan);
         }
-        
+
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('timeline-content');
         if (event.eventClass) contentDiv.classList.add(event.eventClass);
-        
+
         // Create temporary container for parsing
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = marked.parse(event.content || 'Kein Inhalt.');
-        
+
         // Find and replace all images with images/ prefix BEFORE adding to DOM
         const images = tempDiv.querySelectorAll('img');
         images.forEach(img => {
@@ -435,40 +498,40 @@
             img.style.display = 'none';
           }
         });
-        
+
         // Now move the processed content to the actual contentDiv
         while (tempDiv.firstChild) {
           contentDiv.appendChild(tempDiv.firstChild);
         }
-        
+
         itemDiv.appendChild(dateDiv);
         itemDiv.appendChild(contentDiv);
         itemDiv.dataset.index = index;
         timelineOutput.appendChild(itemDiv);
       }
-      
+
       /**
        * Add duration bars
        */
       function addDurationBars(events) {
         const allItems = timelineOutput.querySelectorAll('.timeline-item');
-        
+
         events.forEach((event, index) => {
           if (!event.endDate || event.date >= event.endDate) return;
-          
+
           const startItem = allItems[index];
           if (!startItem) return;
-          
+
           let endItem = null;
           let endPositionTop = -1;
-          
+
           for (let i = index + 1; i < events.length; i++) {
             if (events[i].date >= event.endDate) {
               endItem = allItems[i];
               break;
             }
           }
-          
+
           const startTop = startItem.offsetTop;
           if (endItem) {
             endPositionTop = endItem.offsetTop;
@@ -478,7 +541,7 @@
               endPositionTop = lastItem.offsetTop + lastItem.offsetHeight;
             }
           }
-          
+
           if (endPositionTop > startTop) {
             const height = endPositionTop - startTop;
             if (height > 20) {
@@ -486,7 +549,7 @@
               durationBar.classList.add('duration-bar');
               durationBar.style.height = height - 2 + 'px';
               startItem.appendChild(durationBar);
-              
+
               const endMarker = document.createElement('div');
               endMarker.classList.add('duration-end-marker');
               endMarker.style.top = height + 'px';
@@ -495,58 +558,58 @@
           }
         });
       }
-      
+
       /**
        * Add today marker
        */
       function addTodayMarker(events) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const validEvents = events.filter(
           e => e.date.getTime() !== new Date(0).getTime()
         );
         if (validEvents.length === 0) return;
-        
+
         let insertIndex = -1;
-        
+
         for (let i = 0; i < validEvents.length; i++) {
           const eventDate = new Date(validEvents[i].date);
           eventDate.setHours(0, 0, 0, 0);
-          
+
           if (eventDate >= today) {
             insertIndex = i;
             break;
           }
         }
-        
+
         if (insertIndex === -1) {
           insertIndex = validEvents.length;
         }
-        
+
         const timelineItems = timelineOutput.querySelectorAll('.timeline-item');
-        
+
         const todayMarker = document.createElement('div');
         todayMarker.classList.add('current-date-marker');
         todayMarker.style.display = 'block';
-        
+
         const todayLabel = document.createElement('span');
         todayLabel.classList.add('current-date-marker-label');
         todayLabel.textContent = 'Heute';
         todayMarker.appendChild(todayLabel);
-        
+
         let targetNode = null;
         if (insertIndex < timelineItems.length) {
           targetNode = timelineItems[insertIndex];
         }
-        
+
         if (targetNode) {
           timelineOutput.insertBefore(todayMarker, targetNode);
         } else {
           timelineOutput.appendChild(todayMarker);
         }
       }
-      
+
       // Handle window close
       window.addEventListener('beforeunload', () => {
         if (channel) {
@@ -557,15 +620,16 @@
           clearInterval(connectionCheckInterval);
         }
       });
-      
+
       // Initialize
       async function initPresentation() {
         await TimelineApp.Images.init();
         initChannel();
       }
-      
+
       initPresentation();
     })();
   </script>
 </body>
+
 </html>

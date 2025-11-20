@@ -17,6 +17,7 @@ TimelineApp.Config = {
   AUTOSAVE_TIMESTAMP_KEY: "timeline_autosave_timestamp",
   HISTORY_KEY: "timeline_history",
   THEME_KEY: "timeline_theme",
+  SWIMLANE_KEY: "timeline_swimlane_preference",
   
   // History Settings
   MAX_HISTORY_SIZE: 50,
@@ -50,6 +51,7 @@ TimelineApp.Config = {
 
 date: 2025-01-15
 class: meeting
+group: General
 ## Projekt Kick-off
 - Ziele definieren
 - Team zusammenstellen
@@ -59,31 +61,59 @@ class: meeting
 date: 2025-01-15
 end_date: 2025-03-31
 class: work
-## Phase 1: Planung & Design
-Detaillierte Konzeptionsphase
+group: Frontend
+## Phase 1: Planung & Design Frontend
+Detaillierte Konzeptionsphase für das Frontend.
+
+---
+date: 2025-01-20
+end_date: 2025-03-25
+class: work
+group: Backend
+## Phase 1: Planung & Design Backend
+Detaillierte Konzeptionsphase für das Backend.
 
 ---
 date: 2025-03-31
 class: success
-## Meilenstein: Design abgeschlossen
-Design-Freigabe erhalten
+group: Frontend
+## Meilenstein: Frontend Design abgeschlossen
+Design-Freigabe für Frontend erhalten.
+
+---
+date: 2025-03-25
+class: success
+group: Backend
+## Meilenstein: Backend Design abgeschlossen
+Design-Freigabe für Backend erhalten.
 
 ---
 date: 2025-04-01
 end_date: 2025-07-31
 class: work
-## Phase 2: Implementierung
-Hauptentwicklungsphase
+group: Frontend
+## Phase 2: Frontend Implementierung
+Hauptentwicklungsphase des Frontends.
+
+---
+date: 2025-04-05
+end_date: 2025-07-25
+class: work
+group: Backend
+## Phase 2: Backend Implementierung
+Hauptentwicklungsphase des Backends.
 
 ---
 date: 2025-07-31
 class: critical
+group: General
 ## Deadline: Go-Live
 Produktivsetzung muss erfolgen!
 
 ---
 date: 2025-08-15
 class: meeting
+group: General
 ## Projekt Review
 Lessons Learned & Retrospektive`
     },

@@ -14,6 +14,9 @@
   let autosaveTimeoutId;
   let searchTimeoutId;
 
+  // Current view mode
+  let useSwimlanes = false;
+
   // Current theme
   let currentTheme = "light";
 
@@ -61,6 +64,7 @@
       savePngBtn: document.getElementById("savePngBtn"),
       savePdfBtn: document.getElementById("savePdfBtn"),
       themeToggle: document.getElementById("themeToggle"),
+      viewToggle: document.getElementById("viewToggle"), // New view toggle button
       searchInput: document.getElementById("searchInput"),
       searchClear: document.getElementById("searchClear"),
       filterButton: document.getElementById("filterButton"),
@@ -83,6 +87,20 @@
     const saved = TimelineApp.Storage.loadFromLocalStorage();
     elements.markdownInput.value = saved;
     TimelineApp.Storage.loadHistory();
+    
+    // Check if a swimlane preference is already set
+    const preferenceExists = TimelineApp.Storage.hasSwimlanePreference();
+    if (preferenceExists) {
+      useSwimlanes = TimelineApp.Storage.loadSwimlanePreference();
+    } else {
+      // If no preference, decide based on content
+      const { body } = TimelineApp.Parser.extractTitleFromMarkdown(saved);
+      const events = TimelineApp.Parser.parseEvents(body, 0);
+      const uniqueGroups = [...new Set(events.map(event => event.group))];
+      
+      useSwimlanes = uniqueGroups.length > 1;
+      TimelineApp.Storage.saveSwimlanePreference(useSwimlanes); // Save the auto-detected preference
+    }
   }
 
   /**
@@ -91,6 +109,7 @@
   function loadTheme() {
     currentTheme = TimelineApp.Storage.loadTheme();
     applyTheme(currentTheme);
+    applyViewPreference(); // Apply view preference after loading from storage
   }
 
   /**
@@ -104,6 +123,21 @@
   }
 
   /**
+   * Apply view preference to button
+   */
+  function applyViewPreference() {
+    if (elements.viewToggle) {
+      elements.viewToggle.textContent = useSwimlanes ? "📜" : "🛤️"; // Scroll for list, track for swimlanes
+      elements.viewToggle.title = useSwimlanes ? "Listenansicht" : "Swimlane-Ansicht";
+      if (useSwimlanes) {
+        elements.viewToggle.classList.add("active");
+      } else {
+        elements.viewToggle.classList.remove("active");
+      }
+    }
+  }
+
+  /**
    * Toggle theme
    */
   function toggleTheme() {
@@ -113,6 +147,21 @@
     // Update presentation window if open
     if (TimelineApp.Presentation.isOpen()) {
       TimelineApp.Presentation.sendThemeUpdate(newTheme);
+    }
+  }
+
+  /**
+   * Toggle view mode (linear vs. swimlanes)
+   */
+  function toggleView() {
+    useSwimlanes = !useSwimlanes;
+    TimelineApp.Storage.saveSwimlanePreference(useSwimlanes);
+    applyViewPreference();
+    parseAndRenderTimeline();
+
+    // Update presentation window if open
+    if (TimelineApp.Presentation.isOpen()) {
+      TimelineApp.Presentation.sendViewUpdate(useSwimlanes);
     }
   }
 
@@ -132,7 +181,8 @@
   async function parseAndRenderTimeline() {
     const success = await TimelineApp.Renderer.renderTimeline(
       elements.markdownInput,
-      elements.timelineOutput
+      elements.timelineOutput,
+      useSwimlanes // Pass the useSwimlanes flag
     );
     if (success) {
       TimelineApp.Search.applySearchAndFilter(
@@ -162,6 +212,11 @@
   function setupEventListeners() {
     // Theme toggle
     elements.themeToggle.addEventListener("click", toggleTheme);
+
+    // View toggle
+    if (elements.viewToggle) {
+      elements.viewToggle.addEventListener("click", toggleView);
+    }
 
     // Visualize button
     elements.visualizeBtn.addEventListener("click", handleVisualize);

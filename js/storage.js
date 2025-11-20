@@ -166,5 +166,41 @@ TimelineApp.Storage = {
       console.error("Theme load failed:", e);
       return "light";
     }
+  },
+
+  /**
+   * Save swimlane preference
+   */
+  saveSwimlanePreference(preference) {
+    try {
+      localStorage.setItem(TimelineApp.Config.SWIMLANE_KEY, JSON.stringify(preference));
+    } catch (e) {
+      console.error("Swimlane preference save failed:", e);
+    }
+  },
+
+  /**
+   * Load swimlane preference
+   */
+  loadSwimlanePreference() {
+    try {
+      const preference = localStorage.getItem(TimelineApp.Config.SWIMLANE_KEY);
+      return preference ? JSON.parse(preference) : false; // Default to false
+    } catch (e) {
+      console.error("Swimlane preference load failed:", e);
+      return false;
+    }
+  },
+
+  /**
+   * Check if swimlane preference exists
+   */
+  hasSwimlanePreference() {
+    try {
+      return localStorage.getItem(TimelineApp.Config.SWIMLANE_KEY) !== null;
+    } catch (e) {
+      console.error("Swimlane preference check failed:", e);
+      return false;
+    }
   }
 };

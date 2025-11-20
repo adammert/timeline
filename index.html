@@ -37,6 +37,7 @@
         <div class="header-buttons">
           <button class="templates-toggle" id="templatesToggle" title="Templates">📄</button>
           <button class="stats-toggle" id="statsToggle" title="Statistiken">📊</button>
+          <button class="view-toggle" id="viewToggle" title="Ansicht wechseln">🛤️</button>
           <button class="theme-toggle" id="themeToggle" title="Theme wechseln">🌙</button>
           <button class="help-toggle" id="helpToggle" title="Hilfe & Info">❓</button>
           <button class="help-toggle" id="debugToggle" title="Debug Test">🪲</button>
@@ -262,54 +263,53 @@ Nächstes Ereignis...</pre>
           </ul>
         </div>
 
-        <div class="help-section changelog">
-          <h3>📋 Changelog</h3>
-
-          <div class="version-block">
-            <h4>Version 1.2 - Filter Export & Bugfixes (November 2025)</h4>
-            <ul>
-              <li>✨ <strong>Export-Filter:</strong> Alle Exporte (HTML, MD, PNG, PDF) berücksichtigen nun die aktiven Filter.</li>
-              <li>🐛 <strong>Bugfix:</strong> Ein Timing-Fehler wurde behoben, der verhinderte, dass Filter korrekt auf Exporte angewendet wurden.</li>
-            </ul>
-          </div>
-
-          <div class="version-block">
-            <h4>Version 1.1 - Bild-Support (Januar 2025)</h4>
-            <ul>
-              <li>✨ <strong>Bilder per Drag & Drop einfügen:</strong> Ziehe Bilder direkt ins Textfeld</li>
-              <li>✨ <strong>Screenshot-Paste:</strong> Strg+V fügt Screenshots direkt ein</li>
-              <li>💾 <strong>IndexedDB-Speicherung:</strong> Bilder werden lokal gespeichert</li>
-              <li>📤 <strong>HTML-Export mit Bildern:</strong> Base64-eingebettet für Standalone-Dateien</li>
-              <li>📤 <strong>Markdown-Export mit images/:</strong> Ordnerstruktur mit File System Access API</li>
-              <li>🎨 <strong>Bilder in Präsentation:</strong> Werden automatisch angezeigt</li>
-              <li>🌓 <strong>Theme-Support:</strong> Hell/Dunkel-Modus auch im HTML-Export</li>
-              <li>🐛 <strong>Bugfixes:</strong> DOM-Rendering optimiert, Konsolenfehler behoben</li>
-            </ul>
-            <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 10px;">
-              <em>Bilder werden als <code>![alt](images/filename.png)</code> referenziert für Git-Kompatibilität.</em>
-            </p>
-          </div>
-
-          <div class="version-block">
-            <h4>Version 1.0 - Initial Release</h4>
-            <ul>
-              <li>📝 Markdown-basierte Timeline-Erstellung</li>
-              <li>🎨 Flexible Event-Kategorien mit Farbcodierung</li>
-              <li>📅 Multiple Datumsformate (ISO, Deutsch, Quartale, Monate)</li>
-              <li>⏱️ Dauer-Events mit visuellen Verbindungen</li>
-              <li>🔍 Live-Suche mit Highlighting</li>
-              <li>🎯 Filter nach Kategorien</li>
-              <li>📊 Statistik-Dashboard</li>
-              <li>📋 Vorgefertigte Templates</li>
-              <li>💾 Auto-Save mit LocalStorage</li>
-              <li>⏮️ Undo/Redo-Funktion</li>
-              <li>🌓 Hell/Dunkel-Theme</li>
-              <li>🎬 Präsentationsmodus (1920×1080)</li>
-              <li>📤 Export: Markdown, HTML, PNG, PDF</li>
-            </ul>
-          </div>
-        </div>
-
+                  <div class="help-section changelog">
+                  <h3>📋 Changelog</h3>
+        
+                  <div class="version-block">
+                    <h4>Version 1.2 - Filter Export & Bugfixes (November 2025)</h4>
+                    <ul>
+                      <li>✨ <strong>Export-Filter:</strong> Alle Exporte (HTML, MD, PNG, PDF) berücksichtigen nun die aktiven Filter.</li>
+                      <li>🐛 <strong>Bugfix:</strong> Ein Timing-Fehler wurde behoben, der verhinderte, dass Filter korrekt auf Exporte angewendet wurden.</li>
+                    </ul>
+                  </div>
+        
+                  <div class="version-block">
+                    <h4>Version 1.1 - Bild-Support (Januar 2025)</h4>
+                    <ul>
+                      <li>✨ <strong>Bilder per Drag & Drop einfügen:</strong> Ziehe Bilder direkt ins Textfeld</li>
+                      <li>✨ <strong>Screenshot-Paste:</strong> Strg+V fügt Screenshots direkt ein</li>
+                      <li>💾 <strong>IndexedDB-Speicherung:</strong> Bilder werden lokal gespeichert</li>
+                      <li>📤 <strong>HTML-Export mit Bildern:</strong> Base64-eingebettet für Standalone-Dateien</li>
+                      <li>📤 <strong>Markdown-Export mit images/:</strong> Ordnerstruktur mit File System Access API</li>
+                      <li>🎨 <strong>Bilder in Präsentation:</strong> Werden automatisch angezeigt</li>
+                      <li>🌓 <strong>Theme-Support:</strong> Hell/Dunkel-Modus auch im HTML-Export</li>
+                      <li>🐛 <strong>Bugfixes:</strong> DOM-Rendering optimiert, Konsolenfehler behoben</li>
+                    </ul>
+                    <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 10px;">
+                      <em>Bilder werden als <code>![alt](images/filename.png)</code> referenziert für Git-Kompatibilität.</em>
+                    </p>
+                  </div>
+        
+                  <div class="version-block">
+                    <h4>Version 1.0 - Initial Release</h4>
+                    <ul>
+                      <li>📝 Markdown-basierte Timeline-Erstellung</li>
+                      <li>🎨 Flexible Event-Kategorien mit Farbcodierung</li>
+                      <li>📅 Multiple Datumsformate (ISO, Deutsch, Quartale, Monate)</li>
+                      <li>⏱️ Dauer-Events mit visuellen Verbindungen</li>
+                      <li>🔍 Live-Suche mit Highlighting</li>
+                      <li>🎯 Filter nach Kategorien</li>
+                      <li>📊 Statistik-Dashboard</li>
+                      <li>📋 Vorgefertigte Templates</li>
+                      <li>💾 Auto-Save mit LocalStorage</li>
+                      <li>⏮️ Undo/Redo-Funktion</li>
+                      <li>🌓 Hell/Dunkel-Theme</li>
+                      <li>🎬 Präsentationsmodus (1920×1080)</li>
+                      <li>📤 Export: Markdown, HTML, PNG, PDF</li>
+                    </ul>
+                  </div>
+                </div>
         <div class="help-section"
           style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary-color);">
           <h3>ℹ️ Über Timeline Visualizer</h3>

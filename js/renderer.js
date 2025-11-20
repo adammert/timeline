@@ -9,13 +9,19 @@ TimelineApp.Renderer = {
   /**
    * Render timeline from markdown input
    */
-  async renderTimeline(markdownInput, timelineOutputContainer) {
+  async renderTimeline(markdownInput, timelineOutputContainer, showSwimlanes = false) {
     try {
       const fullMarkdown = markdownInput.value;
       const parsedTop = TimelineApp.Parser.extractTitleFromMarkdown(fullMarkdown);
       const currentTitle = parsedTop.title;
       const bodyText = parsedTop.body || "";
       const bodyOffset = fullMarkdown.indexOf(bodyText);
+
+      // Clear the container before rendering
+      timelineOutputContainer.innerHTML = "";
+      // Remove any previous swimlane classes
+      timelineOutputContainer.classList.remove("is-swimlanes");
+      timelineOutputContainer.style.removeProperty("--num-lanes");
 
       if (!bodyText.trim()) {
         timelineOutputContainer.innerHTML =
@@ -35,8 +41,15 @@ TimelineApp.Renderer = {
 
       events.sort((a, b) => a.date - b.date);
       this.allEvents = events;
-      timelineOutputContainer.innerHTML = "";
 
+      const uniqueGroups = [...new Set(events.map(event => event.group))];
+      const isSwimlaneMode = showSwimlanes && uniqueGroups.length > 1;
+
+      if (isSwimlaneMode) {
+        timelineOutputContainer.classList.add("is-swimlanes");
+        timelineOutputContainer.style.setProperty("--num-lanes", uniqueGroups.length);
+      }
+      
       // Add title if present
       if (currentTitle) {
         const titleEl = document.createElement("h1");
@@ -45,22 +58,69 @@ TimelineApp.Renderer = {
         timelineOutputContainer.appendChild(titleEl);
       }
 
-      // Render each event
-      events.forEach((event, index) => {
-        this.renderEvent(event, index, events, timelineOutputContainer);
-      });
+      if (isSwimlaneMode) {
+        // Render lane headers
+        uniqueGroups.forEach(groupName => {
+          const headerDiv = document.createElement("div");
+          headerDiv.classList.add("timeline-lane-header");
+          headerDiv.textContent = groupName;
+          timelineOutputContainer.appendChild(headerDiv);
+        });
 
-      if (timelineOutputContainer.innerHTML === "") {
+        // Sort events for swimlane rendering: primary by date, secondary by group
+        events.sort((a, b) => {
+          if (a.date.getTime() === b.date.getTime()) {
+            return uniqueGroups.indexOf(a.group) - uniqueGroups.indexOf(b.group);
+          }
+          return a.date - b.date;
+        });
+
+        // Render each event into its lane
+        events.forEach((event, index) => {
+          const itemDiv = this.renderEvent(event, index, events, timelineOutputContainer, isSwimlaneMode);
+          const groupIndex = uniqueGroups.indexOf(event.group) + 1; // CSS grid columns are 1-indexed
+          itemDiv.style.setProperty("--lane-col", groupIndex);
+          // row is automatically handled by the flow
+          timelineOutputContainer.appendChild(itemDiv);
+        });
+        
+        this.addTodayMarker(events, timelineOutputContainer);
+      } else {
+        // Linear mode rendering
+        events.forEach((event, index) => {
+          const itemDiv = this.renderEvent(event, index, events, timelineOutputContainer, isSwimlaneMode);
+          timelineOutputContainer.appendChild(itemDiv);
+        });
+        this.addTodayMarker(events, timelineOutputContainer);
+      }
+      
+      // Check if any actual timeline items were rendered (excluding title and headers)
+      const renderedItems = timelineOutputContainer.querySelectorAll(".timeline-item");
+      if (renderedItems.length === 0) {
         timelineOutputContainer.innerHTML =
           '<p class="info-message">Keine Ereignisse zum Anzeigen nach der Verarbeitung.</p>';
         return false;
       }
-
-      this.addTodayMarker(events, timelineOutputContainer);
       
       // Replace image references with actual images from IndexedDB
       if (TimelineApp.Images) {
         await TimelineApp.Images.replaceImageReferences(timelineOutputContainer);
+      }
+
+      // Add IntersectionObserver for scroll animations
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+
+        timelineOutputContainer.querySelectorAll(".timeline-item").forEach(item => { // Query on timelineOutputContainer
+          observer.observe(item);
+        });
       }
       
       return true;
@@ -74,7 +134,7 @@ TimelineApp.Renderer = {
   /**
    * Render single event
    */
-  renderEvent(event, index, allEvents, container) {
+  renderEvent(event, index, allEvents, container, isSwimlaneMode = false) {
     const itemDiv = document.createElement("div");
     itemDiv.classList.add("timeline-item");
     itemDiv.dataset.startPos = event.startPos;
@@ -154,7 +214,6 @@ TimelineApp.Renderer = {
 
     itemDiv.appendChild(dateDiv);
     itemDiv.appendChild(contentDiv);
-    container.appendChild(itemDiv);
 
     // Add duration bar if end date exists
     if (event.endDate && event.date < event.endDate) {
@@ -162,6 +221,7 @@ TimelineApp.Renderer = {
         this.renderDurationBar(itemDiv, event, index, allEvents, container);
       }, 50);
     }
+    return itemDiv; // Return the itemDiv instead of appending
   },
 
   /**

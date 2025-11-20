@@ -198,13 +198,15 @@ TimelineApp.Parser = {
         displayDateString = null,
         parsedDateObject = null,
         parsedEndDateObject = null,
-        eventClass = null;
+        eventClass = null,
+        eventGroup = 'Default'; // Initialize eventGroup to 'Default'
       let contentLines = [];
 
       for (const line of lines) {
         const dateMatch = line.match(/^date:\s*(.+)/i);
         const endDateMatch = line.match(/^end_date:\s*(.+)/i);
         const classMatch = line.match(/^class:\s*(\w+)/i);
+        const groupMatch = line.match(/^(group|lane):\s*(.+)/i); // Match 'group:' or 'lane:'
         
         if (dateMatch) {
           dateStringFromInput = dateMatch[1].trim();
@@ -220,6 +222,8 @@ TimelineApp.Parser = {
           const foundClass = classMatch[1].toLowerCase();
           if (TimelineApp.Config.VALID_EVENT_CLASSES.includes(foundClass))
             eventClass = `is-${foundClass}`;
+        } else if (groupMatch) {
+          eventGroup = groupMatch[2].trim(); // Extract group name
         } else {
           contentLines.push(line);
         }
@@ -231,6 +235,7 @@ TimelineApp.Parser = {
         explicitTimeProvided: explicitTimeInInput,
         displayDateString: displayDateString,
         eventClass: eventClass,
+        group: eventGroup, // Add group to eventData
         startPos: block.start,
         endPos: block.end
       };

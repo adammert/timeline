@@ -367,10 +367,11 @@ button#visualizeBtn:hover {
 .timeline-title {
   text-align: center;
   color: var(--primary-color);
-  margin: 0 0 30px 0;
-  font-size: 1.8em;
+  margin: 0 0 40px 0;
+  font-size: 2em;
   line-height: 1.3;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .timeline::before {
@@ -379,9 +380,10 @@ button#visualizeBtn:hover {
   left: 20px;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: 3px;
   background-color: var(--line-color);
   border-radius: 2px;
+  opacity: 0.8;
 }
 
 body.fullscreen-mode .timeline::before {
@@ -394,8 +396,7 @@ body.fullscreen-mode .timeline::before {
   max-width: none;
   padding: 0;
   margin: 0 20px;
-  column-gap: 3rem;
-  /* Increased gap */
+  column-gap: 2.5rem;
 }
 
 .timeline.is-swimlanes .timeline-title {
@@ -412,56 +413,62 @@ body.fullscreen-mode .timeline::before {
   position: sticky;
   top: 0;
   z-index: 100;
-  background-color: var(--panel-background);
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  font-weight: bold;
+  background: linear-gradient(to bottom, var(--panel-background), var(--panel-background) 85%, transparent);
+  padding: 15px 15px 20px;
+  font-weight: 600;
   text-align: center;
   color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 1.05em;
+  letter-spacing: 0.3px;
 }
 
-.timeline-lane-header:not(:last-of-type) {
-  border-right: 1px solid var(--border-color);
+/* Create a vertical line for each swimlane column */
+.timeline-lane-header::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 50px;
+  bottom: -9999px;
+  width: 3px;
+  background-color: var(--line-color);
+  border-radius: 2px;
+  z-index: -1;
 }
 
 .timeline.is-swimlanes .timeline-item {
   position: relative;
-  padding-left: 25px;
-  /* Reduced padding */
-  margin-bottom: 30px;
+  padding-left: 60px;
+  margin-bottom: 40px;
   grid-column: var(--lane-col);
   align-self: start;
 }
 
 .timeline.is-swimlanes .timeline-item::before {
-  left: -12px;
-  /* Adjusted dot position */
+  left: 9px;
   border-color: var(--background-color);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .timeline.is-swimlanes .timeline-content {
-  min-width: 200px;
+  min-width: 220px;
 }
 
 .timeline.is-swimlanes .timeline-date {
-  margin-left: 20px;
-  /* Adjusted date position */
+  margin-left: 0;
 }
 
 .timeline.is-swimlanes .duration-bar {
-  left: -2px;
+  left: 22px;
 }
 
 .timeline.is-swimlanes .duration-end-marker {
-  left: -12px;
+  left: 10px;
   background-color: var(--background-color);
 }
 
 /* This marker will be positioned by JS */
 .timeline.is-swimlanes .current-date-marker {
   position: absolute;
-  /* Changed for precise positioning */
   grid-column: 1 / -1;
   width: 100%;
   margin: 0;
@@ -524,14 +531,14 @@ body.fullscreen-mode .timeline-item {
   position: absolute;
   left: 9px;
   top: 5px;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   background-color: var(--dot-color);
-  border: 4px solid var(--background-color);
+  border: 3px solid var(--background-color);
   border-radius: 50%;
   z-index: 1;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 body.fullscreen-mode .timeline-item::before {
@@ -592,16 +599,16 @@ body.fullscreen-mode .duration-end-marker {
 .timeline-content {
   background-color: var(--panel-background);
   border: 1px solid var(--line-color);
-  padding: 18px 22px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.25s ease;
+  padding: 20px 24px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .timeline-content:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 123, 255, 0.4);
 }
 
 .timeline-content mark {
@@ -619,10 +626,11 @@ body.fullscreen-mode .duration-end-marker {
 .timeline-date {
   font-weight: 600;
   color: var(--primary-color);
-  margin-bottom: 10px;
-  font-size: 0.92em;
+  margin-bottom: 12px;
+  font-size: 0.9em;
   cursor: pointer;
   transition: color 0.2s ease;
+  letter-spacing: 0.2px;
 }
 
 .timeline-date:hover {
@@ -637,22 +645,24 @@ body.fullscreen-mode .duration-end-marker {
 .timeline-content h2,
 .timeline-content h3 {
   margin-top: 0;
-  margin-bottom: 0.7em;
-  color: var(--primary-color);
+  margin-bottom: 0.65em;
+  color: var(--text-color);
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.35;
+  letter-spacing: -0.2px;
 }
 
 .timeline-content h1 {
-  font-size: 1.5em;
+  font-size: 1.4em;
+  font-weight: 700;
 }
 
 .timeline-content h2 {
-  font-size: 1.3em;
+  font-size: 1.25em;
 }
 
 .timeline-content h3 {
-  font-size: 1.15em;
+  font-size: 1.1em;
 }
 
 .timeline-content p {

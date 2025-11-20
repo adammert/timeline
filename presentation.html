@@ -27,83 +27,107 @@
 
     /* Enhanced fonts for presentation */
     .timeline-title {
-      font-size: 2.5em;
-      margin-bottom: 50px;
+      font-size: 2.8em;
+      margin-bottom: 60px;
       font-weight: 700;
+      letter-spacing: -0.5px;
     }
 
     .timeline-item {
-      padding-left: 75px;
-      margin-bottom: 45px;
+      padding-left: 80px;
+      margin-bottom: 50px;
     }
 
     .timeline-item::before {
-      left: 17px;
-      width: 32px;
-      height: 32px;
-      border-width: 5px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      left: 18px;
+      width: 28px;
+      height: 28px;
+      border-width: 4px;
+      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.3), 0 3px 8px rgba(0, 0, 0, 0.15);
     }
 
     .timeline::before {
       left: 32px;
-      width: 5px;
+      width: 4px;
+      opacity: 0.8;
     }
 
     .timeline-date {
-      font-size: 1.15em;
-      margin-bottom: 12px;
+      font-size: 1.1em;
+      margin-bottom: 14px;
       font-weight: 600;
+      letter-spacing: 0.3px;
     }
 
     .timeline-content {
-      font-size: 1.1em;
-      padding: 22px 28px;
-      border-radius: 10px;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+      font-size: 1.15em;
+      padding: 26px 32px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
     }
 
     .timeline-content:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.08);
+      border-color: rgba(0, 123, 255, 0.5);
     }
 
     .timeline-content h1 {
-      font-size: 1.75em;
-      margin-bottom: 0.6em;
+      font-size: 1.65em;
+      margin-bottom: 0.65em;
+      font-weight: 700;
+      letter-spacing: -0.3px;
     }
 
     .timeline-content h2 {
-      font-size: 1.5em;
-      margin-bottom: 0.6em;
+      font-size: 1.45em;
+      margin-bottom: 0.65em;
+      letter-spacing: -0.2px;
     }
 
     .timeline-content h3 {
-      font-size: 1.3em;
-      margin-bottom: 0.6em;
+      font-size: 1.25em;
+      margin-bottom: 0.65em;
+      letter-spacing: -0.1px;
     }
 
     .timeline-content p {
-      margin-bottom: 0.9em;
-      line-height: 1.7;
+      margin-bottom: 0.85em;
+      line-height: 1.75;
     }
 
     .duration-bar {
-      left: 34px;
+      left: 36px;
+      width: 3px;
     }
 
     .duration-end-marker {
-      left: 17px;
-      width: 32px;
-      height: 32px;
+      left: 18px;
+      width: 28px;
+      height: 28px;
       border-width: 4px;
     }
 
     .duration-label {
-      font-size: 0.85em;
-      padding: 4px 10px;
-      border-radius: 5px;
+      font-size: 0.9em;
+      padding: 5px 12px;
+      border-radius: 6px;
       font-weight: 500;
+    }
+
+    /* Swimlane enhancements for presentation */
+    .timeline.is-swimlanes .timeline-lane-header {
+      font-size: 1.2em;
+      padding: 18px 15px 25px;
+      letter-spacing: 0.5px;
+    }
+
+    .timeline.is-swimlanes .timeline-item {
+      padding-left: 70px;
+    }
+
+    .timeline.is-swimlanes .timeline-item::before {
+      left: 10px;
     }
 
     /* Loading indicator */

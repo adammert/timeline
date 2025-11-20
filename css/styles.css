@@ -422,17 +422,9 @@ body.fullscreen-mode .timeline::before {
   letter-spacing: 0.3px;
 }
 
-/* Create a vertical line for each swimlane column */
+/* Remove the continuous line - we'll use connections between items instead */
 .timeline-lane-header::after {
-  content: "";
-  position: absolute;
-  left: 20px;
-  top: 50px;
-  bottom: -9999px;
-  width: 3px;
-  background-color: var(--line-color);
-  border-radius: 2px;
-  z-index: -1;
+  display: none;
 }
 
 .timeline.is-swimlanes .timeline-item {
@@ -441,6 +433,25 @@ body.fullscreen-mode .timeline::before {
   margin-bottom: 40px;
   grid-column: var(--lane-col);
   align-self: start;
+}
+
+/* Add connecting line to next item in the same lane */
+.timeline.is-swimlanes .timeline-item::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 29px;
+  width: 3px;
+  height: calc(100% + 40px);
+  background-color: var(--line-color);
+  border-radius: 2px;
+  z-index: -1;
+  opacity: 0.8;
+}
+
+/* Hide line on last item in each lane */
+.timeline.is-swimlanes .timeline-item.lane-last-item::after {
+  display: none;
 }
 
 .timeline.is-swimlanes .timeline-item::before {
@@ -468,10 +479,10 @@ body.fullscreen-mode .timeline::before {
 
 /* This marker will be positioned by JS */
 .timeline.is-swimlanes .current-date-marker {
-  position: absolute;
+  position: relative;
   grid-column: 1 / -1;
   width: 100%;
-  margin: 0;
+  margin: 20px 0;
   z-index: 10;
   left: 0;
 }

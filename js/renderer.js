@@ -80,10 +80,14 @@ TimelineApp.Renderer = {
           const itemDiv = this.renderEvent(event, index, events, timelineOutputContainer, isSwimlaneMode);
           const groupIndex = uniqueGroups.indexOf(event.group) + 1; // CSS grid columns are 1-indexed
           itemDiv.style.setProperty("--lane-col", groupIndex);
+          itemDiv.dataset.laneGroup = event.group; // Store group for later processing
           // row is automatically handled by the flow
           timelineOutputContainer.appendChild(itemDiv);
         });
-        
+
+        // Mark last item in each lane to hide connecting line
+        this.markLastItemsPerLane(timelineOutputContainer, uniqueGroups);
+
         this.addTodayMarker(events, timelineOutputContainer);
       } else {
         // Linear mode rendering
@@ -282,6 +286,27 @@ TimelineApp.Renderer = {
         startItem.appendChild(endMarker);
       }
     }
+  },
+
+  /**
+   * Mark the last item in each swimlane to hide the connecting line
+   */
+  markLastItemsPerLane(container, groups) {
+    const timelineItems = container.querySelectorAll(".timeline-item");
+
+    // Find last item for each group
+    const lastItemsPerGroup = {};
+    timelineItems.forEach(item => {
+      const group = item.dataset.laneGroup;
+      if (group) {
+        lastItemsPerGroup[group] = item;
+      }
+    });
+
+    // Mark last items
+    Object.values(lastItemsPerGroup).forEach(item => {
+      item.classList.add("lane-last-item");
+    });
   },
 
   /**

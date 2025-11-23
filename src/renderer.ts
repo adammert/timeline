@@ -291,8 +291,9 @@ export class Renderer {
     let endPositionTop = -1;
 
     for (let i = sortedIndex + 1; i < allEvents.length; i++) {
-      if (allEvents[i].date >= event.endDate!) {
-        endItem = allItems[i];
+      const evt = allEvents[i];
+      if (evt && evt.date >= event.endDate!) {
+        endItem = allItems[i] || null;
         break;
       }
     }
@@ -365,10 +366,12 @@ export class Renderer {
     // For each lane, calculate connection line heights
     Object.keys(itemsByLane).forEach(group => {
       const laneItems = itemsByLane[group];
+      if (!laneItems) return;
 
       for (let i = 0; i < laneItems.length - 1; i++) {
         const currentItem = laneItems[i];
         const nextItem = laneItems[i + 1];
+        if (!currentItem || !nextItem) continue;
 
         // Calculate vertical distance between current item and next item in same lane
         const currentTop = currentItem.offsetTop;
@@ -400,7 +403,10 @@ export class Renderer {
     let insertIndex = -1;
 
     for (let i = 0; i < validEvents.length; i++) {
-      const eventDate = new Date(validEvents[i].date);
+      const event = validEvents[i];
+      if (!event) continue;
+
+      const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
 
       if (eventDate >= today) {
@@ -426,7 +432,7 @@ export class Renderer {
 
     let targetNode: Element | null = null;
     if (insertIndex < timelineItems.length) {
-      targetNode = timelineItems[insertIndex];
+      targetNode = timelineItems[insertIndex] || null;
     }
 
     if (targetNode) {

@@ -602,6 +602,8 @@ export class TimelineApp {
 
       // No images or image handling failed - check for markdown files
       const file = files[0];
+      if (!file) return;
+
       console.log('Checking file:', file.name, file.type);
 
       if (
@@ -783,6 +785,8 @@ export class TimelineApp {
 
     Object.keys(TEMPLATES).forEach((key) => {
       const template = TEMPLATES[key];
+      if (!template) return;
+
       const card = document.createElement('div');
       card.className = 'template-card';
       card.innerHTML = `

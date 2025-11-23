@@ -121,8 +121,9 @@ export class Parser {
           MONTH_NAME_TO_INDEX[monthName] || 0,
           1
         );
+        const monthStr = monthNameMatch[1] || '';
         displayDateString = `${
-          monthNameMatch[1]?.charAt(0).toUpperCase() + monthNameMatch[1]?.slice(1)
+          monthStr.charAt(0).toUpperCase() + monthStr.slice(1)
         } ${year}`;
         return {
           date: parsedDateObject,

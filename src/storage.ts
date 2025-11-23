@@ -39,11 +39,11 @@ export class Storage {
         return saved;
       } else {
         // Return default template if nothing saved
-        return TEMPLATES.project.content;
+        return TEMPLATES.project?.content || '';
       }
     } catch (e) {
       console.error('LocalStorage load failed:', e);
-      return TEMPLATES.project.content;
+      return TEMPLATES.project?.content || '';
     }
   }
 

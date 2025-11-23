@@ -2,11 +2,41 @@
  * Export Module - PDF, PNG, HTML, Markdown
  */
 
-TimelineApp.Export = {
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import type { TimelineEvent } from './types';
+
+/**
+ * Service interface for accessing renderer functionality
+ */
+interface RendererService {
+  getAllEvents(): TimelineEvent[];
+}
+
+/**
+ * Service interface for accessing image storage
+ */
+interface ImagesService {
+  getImage(filename: string): Promise<Blob | null>;
+  storeImage(filename: string, file: File | Blob): Promise<void>;
+}
+
+/**
+ * Export class for handling various export formats
+ */
+export class Export {
+  private rendererService: RendererService;
+  private imagesService: ImagesService;
+
+  constructor(rendererService: RendererService, imagesService: ImagesService) {
+    this.rendererService = rendererService;
+    this.imagesService = imagesService;
+  }
+
   /**
    * Sanitize filename
    */
-  sanitizeFilename(name, fallback = "timeline") {
+  sanitizeFilename(name: string | null | undefined, fallback: string = "timeline"): string {
     if (!name || typeof name !== "string") return fallback;
     let s = name
       .replace(/[\u0000-\u001f\u007f]+/g, " ")
@@ -20,12 +50,12 @@ TimelineApp.Export = {
     if (reserved.test(s)) s = s + "-1";
     if (s.length > 120) s = s.slice(0, 120);
     return s;
-  },
+  }
 
   /**
    * Get datetime prefix for filename
    */
-  getDateTimePrefix() {
+  getDateTimePrefix(): string {
     const d = new Date();
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -34,12 +64,12 @@ TimelineApp.Export = {
     const minutes = String(d.getMinutes()).padStart(2, "0");
     const seconds = String(d.getSeconds()).padStart(2, "0");
     return `${y}-${m}-${day}-${hours}${minutes}${seconds}`;
-  },
+  }
 
   /**
    * Download file
    */
-  downloadFile(filename, content, mimeType) {
+  downloadFile(filename: string, content: string, mimeType: string): void {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -49,21 +79,28 @@ TimelineApp.Export = {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  },
+  }
 
   /**
    * Export to Markdown
    */
-  exportMarkdown(fullMarkdown, timelineOutputContainer, getCurrentTitle) {
-    const allEvents = TimelineApp.Renderer.getAllEvents();
+  exportMarkdown(
+    fullMarkdown: string,
+    timelineOutputContainer: HTMLElement,
+    getCurrentTitle: () => string
+  ): void {
+    const allEvents = this.rendererService.getAllEvents();
     if (!allEvents || allEvents.length === 0) {
       alert("Keine Daten zum Speichern.");
       return;
     }
-    
-    const visibleEventPositions = new Set();
+
+    const visibleEventPositions = new Set<number>();
     timelineOutputContainer.querySelectorAll('.timeline-item:not(.filtered-out)').forEach(item => {
-        visibleEventPositions.add(parseInt(item.dataset.startPos, 10));
+      const startPos = (item as HTMLElement).dataset.startPos;
+      if (startPos) {
+        visibleEventPositions.add(parseInt(startPos, 10));
+      }
     });
 
     if (visibleEventPositions.size === 0) {
@@ -72,11 +109,11 @@ TimelineApp.Export = {
     }
 
     const visibleEvents = allEvents
-      .filter(event => visibleEventPositions.has(event.startPos))
-      .sort((a, b) => a.startPos - b.startPos);
+      .filter((event: any) => visibleEventPositions.has(event.startPos))
+      .sort((a: any, b: any) => a.startPos - b.startPos);
 
-    const markdownChunks = visibleEvents.map(event => {
-        return fullMarkdown.substring(event.startPos, event.endPos).trim();
+    const markdownChunks = visibleEvents.map((event: any) => {
+      return fullMarkdown.substring(event.startPos, event.endPos).trim();
     });
 
     const title = getCurrentTitle();
@@ -90,21 +127,28 @@ TimelineApp.Export = {
       filteredMarkdown,
       "text/markdown;charset=utf-8"
     );
-  },
+  }
 
   /**
    * Export to Markdown with images using File System Access API
    */
-  async exportMarkdownWithImages(fullMarkdown, timelineOutputContainer, getCurrentTitle) {
-    const allEvents = TimelineApp.Renderer.getAllEvents();
+  async exportMarkdownWithImages(
+    fullMarkdown: string,
+    timelineOutputContainer: HTMLElement,
+    getCurrentTitle: () => string
+  ): Promise<void> {
+    const allEvents = this.rendererService.getAllEvents();
     if (!allEvents || allEvents.length === 0) {
       alert("Keine Daten zum Speichern.");
       return;
     }
-    
-    const visibleEventPositions = new Set();
+
+    const visibleEventPositions = new Set<number>();
     timelineOutputContainer.querySelectorAll('.timeline-item:not(.filtered-out)').forEach(item => {
-        visibleEventPositions.add(parseInt(item.dataset.startPos, 10));
+      const startPos = (item as HTMLElement).dataset.startPos;
+      if (startPos) {
+        visibleEventPositions.add(parseInt(startPos, 10));
+      }
     });
 
     if (visibleEventPositions.size === 0) {
@@ -113,11 +157,11 @@ TimelineApp.Export = {
     }
 
     const visibleEvents = allEvents
-      .filter(event => visibleEventPositions.has(event.startPos))
-      .sort((a, b) => a.startPos - b.startPos);
+      .filter((event: any) => visibleEventPositions.has(event.startPos))
+      .sort((a: any, b: any) => a.startPos - b.startPos);
 
-    const markdownChunks = visibleEvents.map(event => {
-        return fullMarkdown.substring(event.startPos, event.endPos).trim();
+    const markdownChunks = visibleEvents.map((event: any) => {
+      return fullMarkdown.substring(event.startPos, event.endPos).trim();
     });
 
     const title = getCurrentTitle();
@@ -141,8 +185,8 @@ TimelineApp.Export = {
     try {
       // Get all image names from markdown
       const imageRegex = /!\[([^\]]*)\]\(images\/([^)]+)\)/g;
-      const imageNames = new Set();
-      let match;
+      const imageNames = new Set<string>();
+      let match: RegExpExecArray | null;
       while ((match = imageRegex.exec(markdownContent)) !== null) {
         imageNames.add(match[2]);
       }
@@ -158,7 +202,7 @@ TimelineApp.Export = {
       }
 
       // Ask user to select directory
-      const dirHandle = await window.showDirectoryPicker({
+      const dirHandle = await (window as any).showDirectoryPicker({
         mode: 'readwrite',
         startIn: 'documents'
       });
@@ -168,7 +212,7 @@ TimelineApp.Export = {
 
       // Save all images
       for (const imageName of imageNames) {
-        const blob = await TimelineApp.Images.getImage(imageName);
+        const blob = await this.imagesService.getImage(imageName);
         if (blob) {
           const fileHandle = await imagesDirHandle.getFileHandle(imageName, { create: true });
           const writable = await fileHandle.createWritable();
@@ -181,15 +225,15 @@ TimelineApp.Export = {
       const base = this.sanitizeFilename(getCurrentTitle(), "timeline-data");
       const prefix = this.getDateTimePrefix();
       const filename = `${prefix}-${base}.md`;
-      
+
       const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(markdownContent);
       await writable.close();
 
       alert(`Erfolgreich gespeichert:\n- ${filename}\n- ${imageNames.size} Bild(er) im images/ Ordner`);
-      
-    } catch (e) {
+
+    } catch (e: any) {
       if (e.name === 'AbortError') {
         // User cancelled
         return;
@@ -197,12 +241,12 @@ TimelineApp.Export = {
       console.error('Error saving with images:', e);
       alert('Fehler beim Speichern: ' + e.message);
     }
-  },
+  }
 
   /**
    * Load markdown with images using File System Access API
    */
-  async loadMarkdownWithImages() {
+  async loadMarkdownWithImages(): Promise<string | null> {
     if (!('showOpenFilePicker' in window)) {
       alert('Ihr Browser unterstützt die File System Access API nicht.\nBitte verwenden Sie Chrome oder Edge.');
       return null;
@@ -210,7 +254,7 @@ TimelineApp.Export = {
 
     try {
       // Open file picker for .md file
-      const [fileHandle] = await window.showOpenFilePicker({
+      const [fileHandle] = await (window as any).showOpenFilePicker({
         types: [{
           description: 'Markdown Dateien',
           accept: { 'text/markdown': ['.md'] }
@@ -238,7 +282,7 @@ TimelineApp.Export = {
 
       return markdown;
 
-    } catch (e) {
+    } catch (e: any) {
       if (e.name === 'AbortError') {
         return null;
       }
@@ -246,15 +290,15 @@ TimelineApp.Export = {
       alert('Fehler beim Laden: ' + e.message);
       return null;
     }
-  },
+  }
 
   /**
    * Load images from directory
    */
-  async loadImagesFromDirectory() {
+  async loadImagesFromDirectory(): Promise<number> {
     try {
       // Ask user to select directory containing images folder
-      const dirHandle = await window.showDirectoryPicker({
+      const dirHandle = await (window as any).showDirectoryPicker({
         mode: 'read',
         startIn: 'documents'
       });
@@ -274,7 +318,7 @@ TimelineApp.Export = {
         if (entry.kind === 'file' && entry.name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i)) {
           const fileHandle = await imagesDirHandle.getFileHandle(entry.name);
           const file = await fileHandle.getFile();
-          await TimelineApp.Images.storeImage(entry.name, file);
+          await this.imagesService.storeImage(entry.name, file);
           count++;
         }
       }
@@ -285,7 +329,7 @@ TimelineApp.Export = {
 
       return count;
 
-    } catch (e) {
+    } catch (e: any) {
       if (e.name === 'AbortError') {
         return 0;
       }
@@ -293,14 +337,17 @@ TimelineApp.Export = {
       alert('Fehler beim Laden der Bilder: ' + e.message);
       return 0;
     }
-  },
+  }
 
   /**
    * Export to HTML
    */
-  async exportHtml(timelineOutputContainer, getCurrentTitle) {
+  async exportHtml(
+    timelineOutputContainer: HTMLElement,
+    getCurrentTitle: () => string
+  ): Promise<void> {
     // Clone the container so we don't modify the original
-    const clonedContainer = timelineOutputContainer.cloneNode(true);
+    const clonedContainer = timelineOutputContainer.cloneNode(true) as HTMLElement;
 
     // Remove filtered out items from the clone
     clonedContainer.querySelectorAll('.filtered-out').forEach(el => el.remove());
@@ -322,42 +369,45 @@ TimelineApp.Export = {
 
     // Find all images with data-filename in the CLONED container
     const images = clonedContainer.querySelectorAll('img[data-filename]');
-    
+
     console.log('Found images for export:', images.length);
-    
+
     for (const img of images) {
-      const filename = img.getAttribute('data-filename');
+      const imgElement = img as HTMLImageElement;
+      const filename = imgElement.getAttribute('data-filename');
       console.log('Processing image:', filename);
-      
+
+      if (!filename) continue;
+
       try {
         // Get image directly from IndexedDB
-        const blob = await TimelineApp.Images.getImage(filename);
+        const blob = await this.imagesService.getImage(filename);
         if (blob) {
           // Convert to base64
           const base64 = await this.blobToBase64(blob);
-          img.setAttribute('src', base64);
+          imgElement.setAttribute('src', base64);
           // Remove data-filename attribute from export
-          img.removeAttribute('data-filename');
+          imgElement.removeAttribute('data-filename');
           // Make visible
-          img.style.display = '';
+          imgElement.style.display = '';
           console.log('Converted image to base64:', filename);
         } else {
           console.warn('Image not found in IndexedDB:', filename);
           // Fallback: Keep current src if it's already a data URL or valid URL
-          const currentSrc = img.getAttribute('src');
+          const currentSrc = imgElement.getAttribute('src');
           if (currentSrc && !currentSrc.startsWith('data:image/gif')) {
             // Keep it as is (might be external URL or already base64)
             console.log('Keeping existing src:', currentSrc.substring(0, 50));
           } else {
             // Replace with error placeholder
-            img.setAttribute('alt', `[Bild nicht gefunden: ${filename}]`);
-            img.removeAttribute('src');
+            imgElement.setAttribute('alt', `[Bild nicht gefunden: ${filename}]`);
+            imgElement.removeAttribute('src');
           }
-          img.removeAttribute('data-filename');
+          imgElement.removeAttribute('data-filename');
         }
       } catch (e) {
         console.error('Error converting image:', filename, e);
-        img.removeAttribute('data-filename');
+        imgElement.removeAttribute('data-filename');
       }
     }
 
@@ -374,24 +424,28 @@ TimelineApp.Export = {
       fullHtml,
       "text/html;charset=utf-8"
     );
-  },
+  }
 
   /**
    * Convert blob to base64
    */
-  blobToBase64(blob) {
+  blobToBase64(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
+      reader.onloadend = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-  },
+  }
 
   /**
    * Export to PNG
    */
-  async exportPng(outputPanel, getCurrentTitle, parseCallback) {
+  async exportPng(
+    outputPanel: HTMLElement,
+    getCurrentTitle: () => string,
+    parseCallback?: () => Promise<void>
+  ): Promise<void> {
     if (typeof html2canvas === "undefined") {
       alert(
         "html2canvas Bibliothek nicht geladen. PNG-Export nicht möglich."
@@ -405,8 +459,8 @@ TimelineApp.Export = {
     }
     if (parseCallback) await parseCallback();
 
-    const originalTimeline = outputPanel.querySelector(".timeline");
-    const savePngBtn = document.getElementById("savePngBtn");
+    const originalTimeline = outputPanel.querySelector(".timeline") as HTMLElement | null;
+    const savePngBtn = document.getElementById("savePngBtn") as HTMLButtonElement | null;
 
     if (
       !originalTimeline ||
@@ -420,22 +474,26 @@ TimelineApp.Export = {
       return;
     }
 
-    savePngBtn.textContent = "PNG wird generiert...";
-    savePngBtn.disabled = true;
+    if (savePngBtn) {
+      savePngBtn.textContent = "PNG wird generiert...";
+      savePngBtn.disabled = true;
+    }
 
     // --- New logic: clone and filter ---
-    const elementToCapture = originalTimeline.cloneNode(true);
+    const elementToCapture = originalTimeline.cloneNode(true) as HTMLElement;
     elementToCapture.querySelectorAll('.filtered-out').forEach(el => el.remove());
 
     // Check if there's anything visible to export
-    if (elementToCapture.children.length === 0 || !elementToCapture.textContent.trim()) {
-        alert("Es gibt keine sichtbaren Timeline-Daten zum Speichern als PNG.");
+    if (elementToCapture.children.length === 0 || !elementToCapture.textContent?.trim()) {
+      alert("Es gibt keine sichtbaren Timeline-Daten zum Speichern als PNG.");
+      if (savePngBtn) {
         savePngBtn.textContent = "PNG speichern";
         savePngBtn.disabled = false;
-        if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
-        return;
+      }
+      if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
+      return;
     }
-    
+
     // Style and append off-screen to ensure styles are computed
     elementToCapture.style.position = 'absolute';
     elementToCapture.style.left = '-9999px';
@@ -462,24 +520,30 @@ TimelineApp.Export = {
       const prefix = this.getDateTimePrefix();
       a.download = `${prefix}-${base}.png`;
       document.body.appendChild(a);
-a.click();
+      a.click();
       document.body.removeChild(a);
     } catch (err) {
       console.error("Fehler beim Erstellen des PNGs:", err);
       alert("Fehler beim Erstellen des PNGs. Siehe Konsole für Details.");
     } finally {
       document.body.removeChild(elementToCapture); // Clean up the clone
-      savePngBtn.textContent = "PNG speichern";
-      savePngBtn.disabled = false;
+      if (savePngBtn) {
+        savePngBtn.textContent = "PNG speichern";
+        savePngBtn.disabled = false;
+      }
       if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
     }
-  },
+  }
 
   /**
    * Export to PDF
    */
-  async exportPdf(outputPanel, getCurrentTitle, parseCallback) {
-    if (typeof jspdf === "undefined") {
+  async exportPdf(
+    outputPanel: HTMLElement,
+    getCurrentTitle: () => string,
+    parseCallback?: () => Promise<void>
+  ): Promise<void> {
+    if (typeof jsPDF === "undefined") {
       alert("jsPDF Bibliothek nicht geladen. PDF-Export nicht möglich.");
       return;
     }
@@ -490,9 +554,11 @@ a.click();
     }
     if (parseCallback) await parseCallback();
 
-    const savePdfBtn = document.getElementById("savePdfBtn");
-    savePdfBtn.textContent = "PDF wird generiert...";
-    savePdfBtn.disabled = true;
+    const savePdfBtn = document.getElementById("savePdfBtn") as HTMLButtonElement | null;
+    if (savePdfBtn) {
+      savePdfBtn.textContent = "PDF wird generiert...";
+      savePdfBtn.disabled = true;
+    }
 
     try {
       const timelineItems = outputPanel.querySelectorAll(
@@ -501,13 +567,14 @@ a.click();
 
       if (timelineItems.length === 0) {
         alert("Keine sichtbaren Daten für den PDF-Export gefunden.");
-        savePdfBtn.textContent = "PDF speichern";
-        savePdfBtn.disabled = false;
+        if (savePdfBtn) {
+          savePdfBtn.textContent = "PDF speichern";
+          savePdfBtn.disabled = false;
+        }
         if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
         return;
       }
 
-      const { jsPDF } = jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -524,12 +591,12 @@ a.click();
       pdf.setFontSize(10);
 
       for (const item of timelineItems) {
-        const dateEl = item.querySelector(".timeline-date");
-        const contentEl = item.querySelector(".timeline-content");
+        const dateEl = item.querySelector(".timeline-date") as HTMLElement | null;
+        const contentEl = item.querySelector(".timeline-content") as HTMLElement | null;
 
         if (!dateEl || !contentEl) continue;
 
-        const date = dateEl.textContent.trim();
+        const date = dateEl.textContent?.trim() || "";
         const content = contentEl.innerText.trim();
 
         if (yPosition > pageHeight - 40) {
@@ -546,7 +613,7 @@ a.click();
         pdf.setTextColor(51, 51, 51);
         const lines = pdf.splitTextToSize(content, contentWidth);
 
-        lines.forEach((line) => {
+        lines.forEach((line: string) => {
           if (yPosition > pageHeight - 20) {
             pdf.addPage();
             yPosition = margin;
@@ -561,13 +628,15 @@ a.click();
       const base = this.sanitizeFilename(getCurrentTitle(), "timeline");
       const prefix = this.getDateTimePrefix();
       pdf.save(`${prefix}-${base}.pdf`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("PDF Export error:", error);
       alert("Fehler beim PDF-Export: " + error.message);
     } finally {
-      savePdfBtn.textContent = "PDF speichern";
-      savePdfBtn.disabled = false;
+      if (savePdfBtn) {
+        savePdfBtn.textContent = "PDF speichern";
+        savePdfBtn.disabled = false;
+      }
       if (wasInFullscreen) document.body.classList.add("fullscreen-mode");
     }
   }
-};
+}

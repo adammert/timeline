@@ -3,25 +3,35 @@
  * Handles communication with presentation window
  */
 
-TimelineApp.Presentation = {
-  // State
-  presentationWindow: null,
-  channel: null,
-  isConnected: false,
-  pingInterval: null,
+import type { ThemeMode } from './types';
+
+interface PresentationMessage {
+  type: 'init' | 'update' | 'theme' | 'filters' | 'ping' | 'pong' | 'request_data' | 'presentation_closed';
+  markdown?: string;
+  theme?: ThemeMode;
+  filters?: string[];
+  searchQuery?: string;
+  timestamp?: number;
+}
+
+export class Presentation {
+  private presentationWindow: Window | null = null;
+  private channel: BroadcastChannel | null = null;
+  private isConnected = false;
+  private pingInterval: number | null = null;
 
   /**
    * Open presentation window
    */
-  openWindow() {
+  openWindow(): boolean {
     // Calculate window dimensions for FullHD
     const width = 1920;
     const height = 1080;
-    
+
     // Center on screen if possible
-    const left = window.screenX + (window.outerWidth / 2) - (width / 2);
-    const top = window.screenY + (window.outerHeight / 2) - (height / 2);
-    
+    const left = window.screenX + window.outerWidth / 2 - width / 2;
+    const top = window.screenY + window.outerHeight / 2 - height / 2;
+
     // Window features - minimal chrome
     const features = [
       `width=${width}`,
@@ -33,47 +43,45 @@ TimelineApp.Presentation = {
       'location=no',
       'status=no',
       'scrollbars=yes',
-      'resizable=yes'
+      'resizable=yes',
     ].join(',');
-    
+
     // Open window
-    this.presentationWindow = window.open(
-      'presentation.html',
-      'TimelinePresentation',
-      features
-    );
-    
+    this.presentationWindow = window.open('presentation.html', 'TimelinePresentation', features);
+
     if (!this.presentationWindow) {
-      alert('Präsentationsfenster konnte nicht geöffnet werden.\nBitte Popup-Blocker prüfen!');
+      alert(
+        'Präsentationsfenster konnte nicht geöffnet werden.\nBitte Popup-Blocker prüfen!'
+      );
       return false;
     }
-    
+
     // Initialize communication
     this.initChannel();
-    
+
     // Send initial data after window loads
     setTimeout(() => {
       this.sendUpdate();
     }, 500);
-    
+
     // Monitor window close
     this.monitorWindow();
-    
+
     return true;
-  },
+  }
 
   /**
    * Initialize BroadcastChannel
    */
-  initChannel() {
+  private initChannel(): void {
     if (this.channel) {
       return; // Already initialized
     }
-    
+
     try {
       this.channel = new BroadcastChannel('timeline_presentation');
-      
-      this.channel.onmessage = (event) => {
+
+      this.channel.onmessage = (event: MessageEvent<PresentationMessage>) => {
         if (event.data.type === 'request_data') {
           // Presentation window requests data
           this.sendUpdate();
@@ -85,163 +93,171 @@ TimelineApp.Presentation = {
           this.cleanup();
         }
       };
-      
+
       // Start ping interval to check connection
-      this.pingInterval = setInterval(() => {
+      this.pingInterval = window.setInterval(() => {
         if (this.channel && this.presentationWindow && !this.presentationWindow.closed) {
           this.channel.postMessage({ type: 'ping' });
         }
       }, 3000);
-      
     } catch (e) {
       console.error('BroadcastChannel nicht unterstützt:', e);
-      alert('Ihr Browser unterstützt keine BroadcastChannel API.\nPräsentationsmodus funktioniert nicht.');
+      alert(
+        'Ihr Browser unterstützt keine BroadcastChannel API.\nPräsentationsmodus funktioniert nicht.'
+      );
     }
-  },
+  }
 
   /**
    * Send update to presentation window
    */
-  sendUpdate(markdown, theme, filters, searchQuery) {
+  sendUpdate(
+    markdown?: string,
+    theme?: ThemeMode,
+    filters?: string[],
+    searchQuery?: string
+  ): void {
     if (!this.channel) return;
-    
+
     // Get markdown from input if not provided
     if (!markdown) {
-      const markdownInput = document.getElementById('markdownInput');
+      const markdownInput = document.getElementById('markdownInput') as HTMLTextAreaElement;
       markdown = markdownInput ? markdownInput.value : '';
     }
-    
+
     // Get theme if not provided
     if (!theme) {
-      theme = document.documentElement.getAttribute('data-theme') || 'light';
+      theme = (document.documentElement.getAttribute('data-theme') as ThemeMode) || 'light';
     }
-    
-    // Get filters if not provided
+
+    // Get filters if not provided (requires Search instance)
     if (!filters) {
-      filters = Array.from(TimelineApp.Search.getActiveFilters());
+      // This will be injected by the app
+      filters = [];
     }
-    
+
     // Get search query if not provided
     if (searchQuery === undefined) {
-      const searchInput = document.getElementById('searchInput');
+      const searchInput = document.getElementById('searchInput') as HTMLInputElement;
       searchQuery = searchInput ? searchInput.value : '';
     }
-    
+
     this.channel.postMessage({
       type: 'init',
       markdown: markdown,
       theme: theme,
       filters: filters,
       searchQuery: searchQuery,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-  },
+  }
 
   /**
    * Send only markdown update (when theme unchanged)
    */
-  sendMarkdownUpdate(markdown) {
+  sendMarkdownUpdate(markdown?: string): void {
     if (!this.channel) return;
-    
+
     if (!markdown) {
-      const markdownInput = document.getElementById('markdownInput');
+      const markdownInput = document.getElementById('markdownInput') as HTMLTextAreaElement;
       markdown = markdownInput ? markdownInput.value : '';
     }
-    
+
     this.channel.postMessage({
       type: 'update',
       markdown: markdown,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-  },
+  }
 
   /**
    * Send theme update to presentation window
    */
-  sendThemeUpdate(theme) {
+  sendThemeUpdate(theme: ThemeMode): void {
     if (!this.channel) return;
-    
+
     this.channel.postMessage({
       type: 'theme',
       theme: theme,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-  },
+  }
 
   /**
    * Send filter update to presentation window
    */
-  sendFiltersUpdate(filters, searchQuery) {
+  sendFiltersUpdate(filters?: string[], searchQuery?: string): void {
     if (!this.channel) return;
-    
+
     if (!filters) {
-      filters = Array.from(TimelineApp.Search.getActiveFilters());
+      // This will be injected by the app
+      filters = [];
     }
-    
+
     if (searchQuery === undefined) {
-      const searchInput = document.getElementById('searchInput');
+      const searchInput = document.getElementById('searchInput') as HTMLInputElement;
       searchQuery = searchInput ? searchInput.value : '';
     }
-    
+
     this.channel.postMessage({
       type: 'filters',
       filters: filters,
       searchQuery: searchQuery,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-  },
+  }
 
   /**
    * Monitor presentation window
    */
-  monitorWindow() {
-    const checkInterval = setInterval(() => {
+  private monitorWindow(): void {
+    const checkInterval = window.setInterval(() => {
       if (!this.presentationWindow || this.presentationWindow.closed) {
         this.cleanup();
         clearInterval(checkInterval);
       }
     }, 1000);
-  },
+  }
 
   /**
    * Check if presentation window is open
    */
-  isOpen() {
-    return this.presentationWindow && !this.presentationWindow.closed;
-  },
+  isOpen(): boolean {
+    return this.presentationWindow !== null && !this.presentationWindow.closed;
+  }
 
   /**
    * Close presentation window
    */
-  closeWindow() {
+  closeWindow(): void {
     if (this.presentationWindow && !this.presentationWindow.closed) {
       this.presentationWindow.close();
     }
     this.cleanup();
-  },
+  }
 
   /**
    * Cleanup resources
    */
-  cleanup() {
+  private cleanup(): void {
     if (this.channel) {
       this.channel.close();
       this.channel = null;
     }
-    
-    if (this.pingInterval) {
+
+    if (this.pingInterval !== null) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
     }
-    
+
     this.presentationWindow = null;
     this.isConnected = false;
-  },
+  }
 
   /**
    * Toggle presentation mode
    */
-  toggle() {
+  toggle(): boolean {
     if (this.isOpen()) {
       this.closeWindow();
       return false;
@@ -249,4 +265,4 @@ TimelineApp.Presentation = {
       return this.openWindow();
     }
   }
-};
+}

@@ -2,52 +2,71 @@
  * Configuration and Constants for Timeline Visualizer
  */
 
-// Initialize global namespace
-window.TimelineApp = window.TimelineApp || {};
+import type { EventType, TemplateData } from './types';
 
-TimelineApp.Config = {
-  // Timing Constants
+export const TIMING = {
   DEBOUNCE_DELAY: 400,
   AUTOSAVE_DELAY: 1000,
   SEARCH_DELAY: 300,
   AUTOSAVE_INDICATOR_DURATION: 2000,
-  
-  // Storage Keys
-  AUTOSAVE_KEY: "timeline_autosave",
-  AUTOSAVE_TIMESTAMP_KEY: "timeline_autosave_timestamp",
-  HISTORY_KEY: "timeline_history",
-  THEME_KEY: "timeline_theme",
-  SWIMLANE_KEY: "timeline_swimlane_preference",
-  
-  // History Settings
-  MAX_HISTORY_SIZE: 50,
-  HISTORY_SAVE_SIZE: 20,
-  
-  // Valid Event Classes
-  VALID_EVENT_CLASSES: ["critical", "warning", "success", "meeting", "work"],
-  
-  // Month Name Mapping (German/English)
-  MONTH_NAME_TO_INDEX: {
-    januar: 0, jan: 0,
-    februar: 1, feb: 1,
-    märz: 2, mär: 2, mar: 2,
-    april: 3, apr: 3,
-    mai: 4, may: 4,
-    juni: 5, jun: 5,
-    juli: 6, jul: 6,
-    august: 7, aug: 7,
-    september: 8, sep: 8,
-    oktober: 9, okt: 9, oct: 9,
-    november: 10, nov: 10,
-    dezember: 11, dez: 11, dec: 11
-  },
+} as const;
 
-  // Templates
-  TEMPLATES: {
-    project: {
-      title: "Projekt-Timeline",
-      description: "Standard Projekt mit Phasen und Meilensteinen",
-      content: `title: Mein Projekt
+export const STORAGE_KEYS = {
+  AUTOSAVE: 'timeline_autosave',
+  AUTOSAVE_TIMESTAMP: 'timeline_autosave_timestamp',
+  HISTORY: 'timeline_history',
+  THEME: 'timeline_theme',
+  SWIMLANE: 'timeline_swimlane_preference',
+} as const;
+
+export const HISTORY = {
+  MAX_SIZE: 50,
+  SAVE_SIZE: 20,
+} as const;
+
+export const VALID_EVENT_CLASSES: EventType[] = [
+  'critical',
+  'warning',
+  'success',
+  'meeting',
+  'work',
+];
+
+export const MONTH_NAME_TO_INDEX: Record<string, number> = {
+  januar: 0,
+  jan: 0,
+  februar: 1,
+  feb: 1,
+  märz: 2,
+  mär: 2,
+  mar: 2,
+  april: 3,
+  apr: 3,
+  mai: 4,
+  may: 4,
+  juni: 5,
+  jun: 5,
+  juli: 6,
+  jul: 6,
+  august: 7,
+  aug: 7,
+  september: 8,
+  sep: 8,
+  oktober: 9,
+  okt: 9,
+  oct: 9,
+  november: 10,
+  nov: 10,
+  dezember: 11,
+  dez: 11,
+  dec: 11,
+};
+
+export const TEMPLATES: Record<string, TemplateData> = {
+  project: {
+    name: 'Projekt-Timeline',
+    description: 'Standard Projekt mit Phasen und Meilensteinen',
+    content: `title: Mein Projekt
 
 date: 2025-01-15
 class: meeting
@@ -115,13 +134,13 @@ date: 2025-08-15
 class: meeting
 group: General
 ## Projekt Review
-Lessons Learned & Retrospektive`
-    },
-    
-    sprint: {
-      title: "Agile Sprint Planning",
-      description: "2-Wochen Sprint mit Daily Standups",
-      content: `title: Sprint 24
+Lessons Learned & Retrospektive`,
+  },
+
+  sprint: {
+    name: 'Agile Sprint Planning',
+    description: '2-Wochen Sprint mit Daily Standups',
+    content: `title: Sprint 24
 
 date: 2025-01-06
 class: meeting
@@ -146,13 +165,13 @@ Zwischenstand präsentieren
 date: 2025-01-19
 class: success
 ## Sprint Demo & Retrospektive
-Ergebnisse präsentieren`
-    },
-    
-    migration: {
-      title: "System Migration",
-      description: "IT-Migrationsprojekt mit kritischen Deadlines",
-      content: `title: Exchange Migration 2025
+Ergebnisse präsentieren`,
+  },
+
+  migration: {
+    name: 'System Migration',
+    description: 'IT-Migrationsprojekt mit kritischen Deadlines',
+    content: `title: Exchange Migration 2025
 
 date: 2025-02-01
 class: warning
@@ -190,13 +209,13 @@ Altsystem wird abgeschaltet!
 date: 2025-07-15
 class: meeting
 ## Post-Migration Review
-Finale Auswertung`
-    },
-    
-    quarterly: {
-      title: "Quartalsplanung",
-      description: "Quartalsziele und Reviews",
-      content: `title: Jahresplanung 2025
+Finale Auswertung`,
+  },
+
+  quarterly: {
+    name: 'Quartalsplanung',
+    description: 'Quartalsziele und Reviews',
+    content: `title: Jahresplanung 2025
 
 date: Q1 2025
 class: work
@@ -223,13 +242,13 @@ date: Q4 2025
 class: success
 ## Q4: Jahresabschluss
 - Ziele erreichen
-- Planung 2026`
-    },
-    
-    personal: {
-      title: "Persönliche Ziele",
-      description: "Jahres- und Monatsziele tracken",
-      content: `title: Meine Ziele 2025
+- Planung 2026`,
+  },
+
+  personal: {
+    name: 'Persönliche Ziele',
+    description: 'Jahres- und Monatsziele tracken',
+    content: `title: Meine Ziele 2025
 
 date: Januar 2025
 class: work
@@ -260,13 +279,13 @@ Korrekturen vornehmen
 date: Dezember 2025
 class: success
 ## Jahresrückblick
-Erfolge feiern`
-    },
-    
-    event: {
-      title: "Event-Planung",
-      description: "Konferenz oder Event organisieren",
-      content: `title: Firmen-Konferenz 2025
+Erfolge feiern`,
+  },
+
+  event: {
+    name: 'Event-Planung',
+    description: 'Konferenz oder Event organisieren',
+    content: `title: Firmen-Konferenz 2025
 
 date: 2025-03-01
 class: meeting
@@ -305,7 +324,6 @@ Die Konferenz findet statt!
 date: 2025-08-30
 class: meeting
 ## Nachbereitung
-Feedback auswerten`
-    }
-  }
+Feedback auswerten`,
+  },
 };

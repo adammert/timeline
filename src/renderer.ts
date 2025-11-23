@@ -2,17 +2,36 @@
  * Timeline Rendering Module
  */
 
-TimelineApp.Renderer = {
-  allEvents: [],
-  cachedLineHeight: 0,
+import { marked } from 'marked';
+import { Parser } from './parser';
+
+interface RawEventData {
+  date: Date;
+  endDate: Date | null;
+  content: string;
+  explicitTimeProvided: boolean;
+  displayDateString: string | null;
+  eventClass: string | null;
+  group: string;
+  startPos: number;
+  endPos: number;
+}
+
+export class Renderer {
+  private allEvents: RawEventData[] = [];
+  private cachedLineHeight: number = 0;
 
   /**
    * Render timeline from markdown input
    */
-  async renderTimeline(markdownInput, timelineOutputContainer, showSwimlanes = false) {
+  async renderTimeline(
+    markdownInput: HTMLTextAreaElement,
+    timelineOutputContainer: HTMLElement,
+    showSwimlanes: boolean = false
+  ): Promise<boolean> {
     try {
       const fullMarkdown = markdownInput.value;
-      const parsedTop = TimelineApp.Parser.extractTitleFromMarkdown(fullMarkdown);
+      const parsedTop = Parser.extractTitleFromMarkdown(fullMarkdown);
       const currentTitle = parsedTop.title;
       const bodyText = parsedTop.body || "";
       const bodyOffset = fullMarkdown.indexOf(bodyText);
@@ -30,7 +49,7 @@ TimelineApp.Renderer = {
         return false;
       }
 
-      const events = TimelineApp.Parser.parseEvents(bodyText, bodyOffset);
+      const events = Parser.parseEvents(bodyText, bodyOffset);
 
       if (events.length === 0) {
         timelineOutputContainer.innerHTML =
@@ -39,7 +58,7 @@ TimelineApp.Renderer = {
         return false;
       }
 
-      events.sort((a, b) => a.date - b.date);
+      events.sort((a, b) => a.date.getTime() - b.date.getTime());
       this.allEvents = events;
 
       const uniqueGroups = [...new Set(events.map(event => event.group))];
@@ -47,9 +66,9 @@ TimelineApp.Renderer = {
 
       if (isSwimlaneMode) {
         timelineOutputContainer.classList.add("is-swimlanes");
-        timelineOutputContainer.style.setProperty("--num-lanes", uniqueGroups.length);
+        timelineOutputContainer.style.setProperty("--num-lanes", String(uniqueGroups.length));
       }
-      
+
       // Add title if present
       if (currentTitle) {
         const titleEl = document.createElement("h1");
@@ -72,14 +91,14 @@ TimelineApp.Renderer = {
           if (a.date.getTime() === b.date.getTime()) {
             return uniqueGroups.indexOf(a.group) - uniqueGroups.indexOf(b.group);
           }
-          return a.date - b.date;
+          return a.date.getTime() - b.date.getTime();
         });
 
         // Render each event into its lane
         events.forEach((event, index) => {
           const itemDiv = this.renderEvent(event, index, events, timelineOutputContainer, isSwimlaneMode);
           const groupIndex = uniqueGroups.indexOf(event.group) + 1; // CSS grid columns are 1-indexed
-          itemDiv.style.setProperty("--lane-col", groupIndex);
+          itemDiv.style.setProperty("--lane-col", String(groupIndex));
           itemDiv.dataset.laneGroup = event.group; // Store group for later processing
           // row is automatically handled by the flow
           timelineOutputContainer.appendChild(itemDiv);
@@ -102,7 +121,7 @@ TimelineApp.Renderer = {
         });
         this.addTodayMarker(events, timelineOutputContainer);
       }
-      
+
       // Check if any actual timeline items were rendered (excluding title and headers)
       const renderedItems = timelineOutputContainer.querySelectorAll(".timeline-item");
       if (renderedItems.length === 0) {
@@ -110,15 +129,15 @@ TimelineApp.Renderer = {
           '<p class="info-message">Keine Ereignisse zum Anzeigen nach der Verarbeitung.</p>';
         return false;
       }
-      
+
       // Replace image references with actual images from IndexedDB
-      if (TimelineApp.Images) {
-        await TimelineApp.Images.replaceImageReferences(timelineOutputContainer);
+      if ((window as any).TimelineApp?.Images) {
+        await (window as any).TimelineApp.Images.replaceImageReferences(timelineOutputContainer);
       }
 
       // Add IntersectionObserver for scroll animations
       if ("IntersectionObserver" in window) {
-        const observer = new IntersectionObserver((entries, observer) => {
+        const observer = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
               entry.target.classList.add("is-visible");
@@ -127,27 +146,33 @@ TimelineApp.Renderer = {
           });
         }, { threshold: 0.1 });
 
-        timelineOutputContainer.querySelectorAll(".timeline-item").forEach(item => { // Query on timelineOutputContainer
+        timelineOutputContainer.querySelectorAll(".timeline-item").forEach(item => {
           observer.observe(item);
         });
       }
-      
+
       return true;
     } catch (error) {
       console.error("Parse error:", error);
-      timelineOutputContainer.innerHTML = `<p class="info-message" style="color: red;">Fehler beim Verarbeiten: ${error.message}</p>`;
+      timelineOutputContainer.innerHTML = `<p class="info-message" style="color: red;">Fehler beim Verarbeiten: ${(error as Error).message}</p>`;
       return false;
     }
-  },
+  }
 
   /**
    * Render single event
    */
-  renderEvent(event, index, allEvents, container, isSwimlaneMode = false) {
+  renderEvent(
+    event: RawEventData,
+    index: number,
+    allEvents: RawEventData[],
+    container: HTMLElement,
+    isSwimlaneMode: boolean = false
+  ): HTMLDivElement {
     const itemDiv = document.createElement("div");
     itemDiv.classList.add("timeline-item");
-    itemDiv.dataset.startPos = event.startPos;
-    itemDiv.dataset.endPos = event.endPos;
+    itemDiv.dataset.startPos = String(event.startPos);
+    itemDiv.dataset.endPos = String(event.endPos);
 
     if (event.endDate) itemDiv.classList.add("has-duration");
 
@@ -188,7 +213,7 @@ TimelineApp.Renderer = {
     if (event.endDate && event.date.getTime() !== 0) {
       const durationSpan = document.createElement("span");
       durationSpan.className = "duration-label";
-      durationSpan.textContent = TimelineApp.Parser.calculateDuration(
+      durationSpan.textContent = Parser.calculateDuration(
         event.date,
         event.endDate
       );
@@ -198,11 +223,11 @@ TimelineApp.Renderer = {
     const contentDiv = document.createElement("div");
     contentDiv.classList.add("timeline-content");
     if (event.eventClass) contentDiv.classList.add(event.eventClass);
-    
+
     // Create temporary container for parsing
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = marked.parse(event.content || "Kein Inhalt.");
-    
+    tempDiv.innerHTML = marked.parse(event.content || "Kein Inhalt.") as string;
+
     // Find and replace all images with images/ prefix BEFORE adding to DOM
     const images = tempDiv.querySelectorAll('img');
     images.forEach(img => {
@@ -215,7 +240,7 @@ TimelineApp.Renderer = {
         img.style.display = 'none';
       }
     });
-    
+
     // Now move the processed content to the actual contentDiv
     while (tempDiv.firstChild) {
       contentDiv.appendChild(tempDiv.firstChild);
@@ -230,14 +255,13 @@ TimelineApp.Renderer = {
         this.renderDurationBar(itemDiv, event, index, allEvents, container);
       }, 50);
     }
-    return itemDiv; // Return the itemDiv instead of appending
-  },
+    return itemDiv;
+  }
 
   /**
    * Helper: return localized weekday name
    */
-
-  getWeekdayLabel(date) {
+  getWeekdayLabel(date: Date): string {
     if (!(date instanceof Date) || isNaN(date.getTime())) {
       return "";
     }
@@ -248,32 +272,38 @@ TimelineApp.Renderer = {
       console.warn('Failed to format weekday', error);
       return "";
     }
-  },
+  }
 
   /**
    * Render duration bar between start and end dates
    */
-  renderDurationBar(startItem, event, sortedIndex, allEvents, container) {
+  renderDurationBar(
+    startItem: HTMLDivElement,
+    event: RawEventData,
+    sortedIndex: number,
+    allEvents: RawEventData[],
+    container: HTMLElement
+  ): void {
     const allItems = container.querySelectorAll(".timeline-item");
     if (!startItem) return;
 
-    let endItem = null;
+    let endItem: Element | null = null;
     let endPositionTop = -1;
 
     for (let i = sortedIndex + 1; i < allEvents.length; i++) {
-      if (allEvents[i].date >= event.endDate) {
+      if (allEvents[i].date >= event.endDate!) {
         endItem = allItems[i];
         break;
       }
     }
 
-    const startTop = startItem.offsetTop;
+    const startTop = (startItem as HTMLElement).offsetTop;
     if (endItem) {
-      endPositionTop = endItem.offsetTop;
+      endPositionTop = (endItem as HTMLElement).offsetTop;
     } else {
       const lastItem = allItems[allItems.length - 1];
       if (lastItem) {
-        endPositionTop = lastItem.offsetTop + lastItem.offsetHeight;
+        endPositionTop = (lastItem as HTMLElement).offsetTop + (lastItem as HTMLElement).offsetHeight;
       }
     }
 
@@ -291,18 +321,18 @@ TimelineApp.Renderer = {
         startItem.appendChild(endMarker);
       }
     }
-  },
+  }
 
   /**
    * Mark the last item in each swimlane to hide the connecting line
    */
-  markLastItemsPerLane(container, groups) {
+  markLastItemsPerLane(container: HTMLElement, groups: string[]): void {
     const timelineItems = container.querySelectorAll(".timeline-item");
 
     // Find last item for each group
-    const lastItemsPerGroup = {};
+    const lastItemsPerGroup: Record<string, Element> = {};
     timelineItems.forEach(item => {
-      const group = item.dataset.laneGroup;
+      const group = (item as HTMLElement).dataset.laneGroup;
       if (group) {
         lastItemsPerGroup[group] = item;
       }
@@ -312,23 +342,23 @@ TimelineApp.Renderer = {
     Object.values(lastItemsPerGroup).forEach(item => {
       item.classList.add("lane-last-item");
     });
-  },
+  }
 
   /**
    * Calculate and set dynamic connection line heights for swimlane items
    */
-  calculateConnectionLines(container) {
+  calculateConnectionLines(container: HTMLElement): void {
     const timelineItems = Array.from(container.querySelectorAll(".timeline-item"));
 
     // Group items by lane
-    const itemsByLane = {};
+    const itemsByLane: Record<string, HTMLElement[]> = {};
     timelineItems.forEach(item => {
-      const group = item.dataset.laneGroup;
+      const group = (item as HTMLElement).dataset.laneGroup;
       if (group) {
         if (!itemsByLane[group]) {
           itemsByLane[group] = [];
         }
-        itemsByLane[group].push(item);
+        itemsByLane[group].push(item as HTMLElement);
       }
     });
 
@@ -353,12 +383,12 @@ TimelineApp.Renderer = {
         }
       }
     });
-  },
+  }
 
   /**
    * Add today marker to timeline
    */
-  addTodayMarker(events, container) {
+  addTodayMarker(events: RawEventData[], container: HTMLElement): void {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -394,7 +424,7 @@ TimelineApp.Renderer = {
     todayLabel.textContent = "Heute";
     todayMarker.appendChild(todayLabel);
 
-    let targetNode = null;
+    let targetNode: Element | null = null;
     if (insertIndex < timelineItems.length) {
       targetNode = timelineItems[insertIndex];
     }
@@ -404,12 +434,12 @@ TimelineApp.Renderer = {
     } else {
       container.appendChild(todayMarker);
     }
-  },
+  }
 
   /**
    * Scroll to source position in editor
    */
-  scrollToSource(start, end, markdownInput) {
+  scrollToSource(start: number, end: number, markdownInput: HTMLTextAreaElement): void {
     if (document.body.classList.contains("fullscreen-mode")) {
       document.body.classList.remove("fullscreen-mode");
     }
@@ -441,7 +471,7 @@ TimelineApp.Renderer = {
       "whiteSpace",
       "wordWrap"
     ].forEach((prop) => {
-      mirror.style[prop] = style[prop];
+      (mirror.style as any)[prop] = (style as any)[prop];
     });
 
     mirror.style.width = `${markdownInput.clientWidth}px`;
@@ -481,12 +511,12 @@ TimelineApp.Renderer = {
     setTimeout(() => {
       markdownInput.classList.remove("highlight-scroll");
     }, 1000);
-  },
+  }
 
   /**
    * Get all events
    */
-  getAllEvents() {
+  getAllEvents(): RawEventData[] {
     return this.allEvents;
   }
-};
+}

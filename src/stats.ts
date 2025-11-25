@@ -2,7 +2,6 @@
  * Statistics Module
  */
 
-import { VALID_EVENT_CLASSES } from './config';
 import type { EventType } from './types';
 
 interface EventStats {

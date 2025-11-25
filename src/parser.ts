@@ -3,7 +3,7 @@
  */
 
 import { MONTH_NAME_TO_INDEX, VALID_EVENT_CLASSES } from './config';
-import type { TimelineEvent, EventType } from './types';
+import type { EventType } from './types';
 
 interface ParsedDate {
   date: Date | null;
@@ -122,7 +122,7 @@ export class Parser {
           1
         );
         displayDateString = `${
-          monthNameMatch[1]?.charAt(0).toUpperCase() + monthNameMatch[1]?.slice(1)
+          (monthNameMatch[1] || '').charAt(0).toUpperCase() + (monthNameMatch[1] || '').slice(1)
         } ${year}`;
         return {
           date: parsedDateObject,

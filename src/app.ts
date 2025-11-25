@@ -207,7 +207,7 @@ export class TimelineApp {
 
     // Update presentation window if open
     if (this.presentation.isOpen()) {
-      this.presentation.sendThemeUpdate(newTheme);
+      this.presentation.sendUpdate(undefined, newTheme);
     }
   }
 
@@ -222,18 +222,18 @@ export class TimelineApp {
 
     // Update presentation window if open
     if (this.presentation.isOpen()) {
-      this.presentation.sendViewUpdate(this.useSwimlanes);
+      this.presentation.sendUpdate();
     }
   }
 
   /**
    * Get current title from markdown
    */
-  private getCurrentTitle(): string | null {
+  private getCurrentTitle(): string {
     const { title } = Parser.extractTitleFromMarkdown(
       this.elements.markdownInput.value || ''
     );
-    return title && title.trim() ? title.trim() : null;
+    return title && title.trim() ? title.trim() : '';
   }
 
   /**
@@ -304,7 +304,7 @@ export class TimelineApp {
             await this.parseAndRenderTimeline();
 
             if (this.presentation.isOpen()) {
-              this.presentation.sendMarkdownUpdate(markdown);
+              this.presentation.sendUpdate(markdown);
             }
           }
           return;
@@ -392,7 +392,7 @@ export class TimelineApp {
    * Handle visualize button click
    */
   private handleVisualize(): void {
-    const isOpen = this.presentation.toggle();
+    this.presentation.toggle();
     this.updateVisualizeButton();
 
     // Also parse and render in main window
@@ -416,7 +416,7 @@ export class TimelineApp {
 
       // Update presentation window if open
       if (this.presentation.isOpen()) {
-        this.presentation.sendMarkdownUpdate(
+        this.presentation.sendUpdate(
           this.elements.markdownInput.value
         );
       }
@@ -450,7 +450,7 @@ export class TimelineApp {
 
       // Update presentation window if open
       if (this.presentation.isOpen()) {
-        this.presentation.sendMarkdownUpdate(text);
+        this.presentation.sendUpdate(text);
       }
 
       if (!document.body.classList.contains('fullscreen-mode')) {
@@ -517,7 +517,9 @@ export class TimelineApp {
     this.export.exportPng(
       this.elements.outputPanel,
       () => this.getCurrentTitle(),
-      () => this.parseAndRenderTimeline()
+      async () => {
+        await this.parseAndRenderTimeline();
+      }
     );
   }
 
@@ -528,7 +530,9 @@ export class TimelineApp {
     this.export.exportPdf(
       this.elements.outputPanel,
       () => this.getCurrentTitle(),
-      () => this.parseAndRenderTimeline()
+      async () => {
+        await this.parseAndRenderTimeline();
+      }
     );
   }
 
@@ -657,6 +661,8 @@ export class TimelineApp {
 
       // No images or image handling failed - check for markdown files
       const file = files[0];
+      if (!file) return;
+
       console.log('Checking file:', file.name, file.type);
 
       if (
@@ -675,7 +681,7 @@ export class TimelineApp {
 
           // Update presentation window if open
           if (this.presentation.isOpen()) {
-            this.presentation.sendMarkdownUpdate(result);
+            this.presentation.sendUpdate(result);
           }
         };
         reader.readAsText(file, 'utf-8');
@@ -708,7 +714,7 @@ export class TimelineApp {
 
         // Update presentation window if open
         if (this.presentation.isOpen()) {
-          this.presentation.sendFiltersUpdate();
+          this.presentation.sendUpdate();
         }
       }, TIMING.SEARCH_DELAY);
     });
@@ -720,7 +726,7 @@ export class TimelineApp {
 
       // Update presentation window if open
       if (this.presentation.isOpen()) {
-        this.presentation.sendFiltersUpdate();
+        this.presentation.sendUpdate();
       }
     });
 
@@ -756,7 +762,7 @@ export class TimelineApp {
 
         // Update presentation window if open
         if (this.presentation.isOpen()) {
-          this.presentation.sendFiltersUpdate();
+          this.presentation.sendUpdate();
         }
       });
     });
@@ -820,6 +826,8 @@ export class TimelineApp {
 
     Object.keys(TEMPLATES).forEach((key) => {
       const template = TEMPLATES[key];
+      if (!template) return;
+
       const card = document.createElement('div');
       card.className = 'template-card';
       card.innerHTML = `
@@ -850,7 +858,7 @@ export class TimelineApp {
 
       // Update presentation window if open
       if (this.presentation.isOpen()) {
-        this.presentation.sendMarkdownUpdate(template.content);
+        this.presentation.sendUpdate(template.content);
       }
 
       this.elements.templatesModal.classList.remove('show');

@@ -4,13 +4,12 @@
 
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import type { TimelineEvent } from './types';
 
 /**
  * Service interface for accessing renderer functionality
  */
 interface RendererService {
-  getAllEvents(): TimelineEvent[];
+  getAllEvents(): any[];
 }
 
 /**
@@ -188,7 +187,9 @@ export class Export {
       const imageNames = new Set<string>();
       let match: RegExpExecArray | null;
       while ((match = imageRegex.exec(markdownContent)) !== null) {
-        imageNames.add(match[2]);
+        if (match[2]) {
+          imageNames.add(match[2]);
+        }
       }
 
       if (imageNames.size === 0) {
@@ -584,7 +585,7 @@ export class Export {
 
       const title = getCurrentTitle() || "Timeline";
       pdf.setFontSize(18);
-      pdf.setFont(undefined, "bold");
+      (pdf as any).setFont(undefined, "bold");
       pdf.text(title, pageWidth / 2, yPosition, { align: "center" });
       yPosition += 15;
 
@@ -604,12 +605,12 @@ export class Export {
           yPosition = margin;
         }
 
-        pdf.setFont(undefined, "bold");
+        (pdf as any).setFont(undefined, "bold");
         pdf.setTextColor(0, 123, 255);
         pdf.text(date, margin, yPosition);
         yPosition += 6;
 
-        pdf.setFont(undefined, "normal");
+        (pdf as any).setFont(undefined, "normal");
         pdf.setTextColor(51, 51, 51);
         const lines = pdf.splitTextToSize(content, contentWidth);
 

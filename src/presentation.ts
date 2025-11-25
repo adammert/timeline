@@ -17,7 +17,6 @@ interface PresentationMessage {
 export class Presentation {
   private presentationWindow: Window | null = null;
   private channel: BroadcastChannel | null = null;
-  private isConnected = false;
   private pingInterval: number | null = null;
 
   /**
@@ -87,7 +86,6 @@ export class Presentation {
           this.sendUpdate();
         } else if (event.data.type === 'pong') {
           // Presentation window is alive
-          this.isConnected = true;
         } else if (event.data.type === 'presentation_closed') {
           // Presentation window closed
           this.cleanup();
@@ -251,7 +249,6 @@ export class Presentation {
     }
 
     this.presentationWindow = null;
-    this.isConnected = false;
   }
 
   /**

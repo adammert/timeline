@@ -86,7 +86,7 @@ export class Images {
   /**
    * Store image with enhanced error handling
    */
-  async storeImage(name: string, blob: Blob): Promise<string> {
+  async storeImage(name: string, blob: Blob): Promise<void> {
     if (!this.db) {
       console.error('Database not initialized');
       try {
@@ -133,7 +133,7 @@ export class Images {
 
         request.onsuccess = () => {
           console.log('Image stored successfully:', name);
-          resolve(name);
+          resolve();
         };
 
         request.onerror = (event) => {

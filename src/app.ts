@@ -76,8 +76,8 @@ export class TimelineApp {
     this.presentation = new Presentation();
     this.search = new Search();
     this.renderer = new Renderer();
-    this.export = new Export();
     this.stats = new Stats();
+    this.export = new Export(this.renderer, this.images);
   }
 
   /**

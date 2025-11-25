@@ -71,6 +71,7 @@ export class TimelineApp {
     this.loadFromStorage();
     this.loadTheme();
     this.setupEventListeners();
+    this.setupResizable();
     this.setupDragAndDrop();
     this.setupSearchAndFilter();
     this.setupModals();
@@ -319,6 +320,65 @@ export class TimelineApp {
 
     // Timeline click events
     this.elements.timelineOutput.addEventListener('click', (e) => this.handleTimelineClick(e));
+  }
+
+  /**
+   * Setup resizable panel
+   */
+  private setupResizable(): void {
+    const inputPanel = document.querySelector('.input-panel') as HTMLElement;
+    if (!inputPanel) return;
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Only resize if clicked on the right edge (within 5px)
+      const rect = inputPanel.getBoundingClientRect();
+      if (Math.abs(e.clientX - rect.right) > 5) {
+        return;
+      }
+
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = inputPanel.offsetWidth;
+      inputPanel.classList.add('resizing');
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+
+      const diff = e.clientX - startX;
+      const newWidth = startWidth + diff;
+
+      // Constrain width between 400px and 800px
+      const constrainedWidth = Math.max(400, Math.min(800, newWidth));
+      inputPanel.style.width = `${constrainedWidth}px`;
+      inputPanel.style.maxWidth = `${constrainedWidth}px`;
+    };
+
+    const handleMouseUp = () => {
+      isResizing = false;
+      inputPanel.classList.remove('resizing');
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      // Save width preference
+      localStorage.setItem('editorPanelWidth', inputPanel.style.width);
+    };
+
+    inputPanel.addEventListener('mousedown', handleMouseDown);
+
+    // Load saved width preference
+    const savedWidth = localStorage.getItem('editorPanelWidth');
+    if (savedWidth) {
+      inputPanel.style.width = savedWidth;
+      inputPanel.style.maxWidth = savedWidth;
+    }
   }
 
   /**

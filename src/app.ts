@@ -6,6 +6,12 @@
 import { Storage } from './storage';
 import { Parser } from './parser';
 import { TIMING, TEMPLATES } from './config';
+import { Images } from './images';
+import { Presentation } from './presentation';
+import { Search } from './search';
+import { Renderer } from './renderer';
+import { Export } from './export';
+import { Stats } from './stats';
 import type { ThemeMode } from './types';
 
 // Type definitions for DOM elements
@@ -43,6 +49,12 @@ interface DOMElements {
 export class TimelineApp {
   // Module instances
   private storage: Storage;
+  private images: Images;
+  private presentation: Presentation;
+  private search: Search;
+  private renderer: Renderer;
+  private export: Export;
+  private stats: Stats;
 
   // DOM Elements
   private elements!: DOMElements;
@@ -60,6 +72,12 @@ export class TimelineApp {
 
   constructor() {
     this.storage = new Storage();
+    this.images = new Images();
+    this.presentation = new Presentation();
+    this.search = new Search();
+    this.renderer = new Renderer();
+    this.export = new Export();
+    this.stats = new Stats();
   }
 
   /**
@@ -84,8 +102,7 @@ export class TimelineApp {
    */
   private async initImages(): Promise<void> {
     try {
-      // @ts-expect-error - Images module not yet converted to TypeScript
-      await TimelineApp.Images.init();
+      await this.images.init();
       console.log('Image management initialized');
     } catch (e) {
       console.error('Failed to initialize images:', e);
@@ -189,10 +206,8 @@ export class TimelineApp {
     this.applyTheme(newTheme);
 
     // Update presentation window if open
-    // @ts-expect-error - Presentation module not yet converted to TypeScript
-    if (TimelineApp.Presentation.isOpen()) {
-      // @ts-expect-error - Presentation module not yet converted to TypeScript
-      TimelineApp.Presentation.sendThemeUpdate(newTheme);
+    if (this.presentation.isOpen()) {
+      this.presentation.sendThemeUpdate(newTheme);
     }
   }
 
@@ -206,10 +221,8 @@ export class TimelineApp {
     this.parseAndRenderTimeline();
 
     // Update presentation window if open
-    // @ts-expect-error - Presentation module not yet converted to TypeScript
-    if (TimelineApp.Presentation.isOpen()) {
-      // @ts-expect-error - Presentation module not yet converted to TypeScript
-      TimelineApp.Presentation.sendViewUpdate(this.useSwimlanes);
+    if (this.presentation.isOpen()) {
+      this.presentation.sendViewUpdate(this.useSwimlanes);
     }
   }
 
@@ -227,15 +240,13 @@ export class TimelineApp {
    * Parse and render timeline
    */
   private async parseAndRenderTimeline(): Promise<boolean> {
-    // @ts-expect-error - Renderer module not yet converted to TypeScript
-    const success = await TimelineApp.Renderer.renderTimeline(
+    const success = await this.renderer.renderTimeline(
       this.elements.markdownInput,
       this.elements.timelineOutput,
       this.useSwimlanes
     );
     if (success) {
-      // @ts-expect-error - Search module not yet converted to TypeScript
-      TimelineApp.Search.applySearchAndFilter(
+      this.search.applySearchAndFilter(
         this.elements.searchInput.value,
         this.elements.timelineOutput
       );
@@ -247,8 +258,7 @@ export class TimelineApp {
    * Update visualize button text based on presentation window state
    */
   private updateVisualizeButton(): void {
-    // @ts-expect-error - Presentation module not yet converted to TypeScript
-    if (TimelineApp.Presentation.isOpen()) {
+    if (this.presentation.isOpen()) {
       this.elements.visualizeBtn.textContent = 'Präsentation schließen';
       this.elements.visualizeBtn.style.backgroundColor = '#dc3545';
     } else {
@@ -286,18 +296,15 @@ export class TimelineApp {
         );
 
         if (useFileSystem) {
-          // @ts-expect-error - Export module not yet converted to TypeScript
-          const markdown = await TimelineApp.Export.loadMarkdownWithImages();
+          const markdown = await this.export.loadMarkdownWithImages();
           if (markdown) {
             this.elements.markdownInput.value = markdown;
             this.storage.saveToHistory(markdown);
             this.storage.saveToLocalStorage(markdown);
             await this.parseAndRenderTimeline();
 
-            // @ts-expect-error - Presentation module not yet converted to TypeScript
-            if (TimelineApp.Presentation.isOpen()) {
-              // @ts-expect-error - Presentation module not yet converted to TypeScript
-              TimelineApp.Presentation.sendMarkdownUpdate(markdown);
+            if (this.presentation.isOpen()) {
+              this.presentation.sendMarkdownUpdate(markdown);
             }
           }
           return;
@@ -385,8 +392,7 @@ export class TimelineApp {
    * Handle visualize button click
    */
   private handleVisualize(): void {
-    // @ts-expect-error - Presentation module not yet converted to TypeScript
-    const isOpen = TimelineApp.Presentation.toggle();
+    const isOpen = this.presentation.toggle();
     this.updateVisualizeButton();
 
     // Also parse and render in main window
@@ -409,10 +415,8 @@ export class TimelineApp {
       }
 
       // Update presentation window if open
-      // @ts-expect-error - Presentation module not yet converted to TypeScript
-      if (TimelineApp.Presentation.isOpen()) {
-        // @ts-expect-error - Presentation module not yet converted to TypeScript
-        TimelineApp.Presentation.sendMarkdownUpdate(
+      if (this.presentation.isOpen()) {
+        this.presentation.sendMarkdownUpdate(
           this.elements.markdownInput.value
         );
       }
@@ -445,10 +449,8 @@ export class TimelineApp {
       this.parseAndRenderTimeline();
 
       // Update presentation window if open
-      // @ts-expect-error - Presentation module not yet converted to TypeScript
-      if (TimelineApp.Presentation.isOpen()) {
-        // @ts-expect-error - Presentation module not yet converted to TypeScript
-        TimelineApp.Presentation.sendMarkdownUpdate(text);
+      if (this.presentation.isOpen()) {
+        this.presentation.sendMarkdownUpdate(text);
       }
 
       if (!document.body.classList.contains('fullscreen-mode')) {
@@ -481,8 +483,7 @@ export class TimelineApp {
       );
 
       if (useFileSystem) {
-        // @ts-expect-error - Export module not yet converted to TypeScript
-        await TimelineApp.Export.exportMarkdownWithImages(
+        await this.export.exportMarkdownWithImages(
           fullMarkdown,
           this.elements.timelineOutput,
           () => this.getCurrentTitle()
@@ -492,8 +493,7 @@ export class TimelineApp {
     }
 
     // Standard markdown export
-    // @ts-expect-error - Export module not yet converted to TypeScript
-    TimelineApp.Export.exportMarkdown(
+    this.export.exportMarkdown(
       fullMarkdown,
       this.elements.timelineOutput,
       () => this.getCurrentTitle()
@@ -507,16 +507,14 @@ export class TimelineApp {
     if (!document.body.classList.contains('fullscreen-mode')) {
       await this.parseAndRenderTimeline();
     }
-    // @ts-expect-error - Export module not yet converted to TypeScript
-    TimelineApp.Export.exportHtml(this.elements.timelineOutput, () => this.getCurrentTitle());
+    this.export.exportHtml(this.elements.timelineOutput, () => this.getCurrentTitle());
   }
 
   /**
    * Handle save PNG
    */
   private handleSavePng(): void {
-    // @ts-expect-error - Export module not yet converted to TypeScript
-    TimelineApp.Export.exportPng(
+    this.export.exportPng(
       this.elements.outputPanel,
       () => this.getCurrentTitle(),
       () => this.parseAndRenderTimeline()
@@ -527,8 +525,7 @@ export class TimelineApp {
    * Handle save PDF
    */
   private handleSavePdf(): void {
-    // @ts-expect-error - Export module not yet converted to TypeScript
-    TimelineApp.Export.exportPdf(
+    this.export.exportPdf(
       this.elements.outputPanel,
       () => this.getCurrentTitle(),
       () => this.parseAndRenderTimeline()
@@ -609,8 +606,7 @@ export class TimelineApp {
     ) {
       const start = parseInt(timelineItem.dataset.startPos, 10);
       const end = parseInt(timelineItem.dataset.endPos, 10);
-      // @ts-expect-error - Renderer module not yet converted to TypeScript
-      TimelineApp.Renderer.scrollToSource(start, end, this.elements.markdownInput);
+      this.renderer.scrollToSource(start, end, this.elements.markdownInput);
     }
   }
 
@@ -648,8 +644,7 @@ export class TimelineApp {
       if (hasImages) {
         // Handle images using the Images module
         console.log('Processing images...');
-        // @ts-expect-error - Images module not yet converted to TypeScript
-        const imagesHandled = await TimelineApp.Images.handleDrop(
+        const imagesHandled = await this.images.handleDrop(
           e,
           this.elements.markdownInput
         );
@@ -679,10 +674,8 @@ export class TimelineApp {
           this.parseAndRenderTimeline();
 
           // Update presentation window if open
-          // @ts-expect-error - Presentation module not yet converted to TypeScript
-          if (TimelineApp.Presentation.isOpen()) {
-            // @ts-expect-error - Presentation module not yet converted to TypeScript
-            TimelineApp.Presentation.sendMarkdownUpdate(result);
+          if (this.presentation.isOpen()) {
+            this.presentation.sendMarkdownUpdate(result);
           }
         };
         reader.readAsText(file, 'utf-8');
@@ -693,8 +686,7 @@ export class TimelineApp {
 
     // Paste event for screenshots
     this.elements.markdownInput.addEventListener('paste', async (e) => {
-      // @ts-expect-error - Images module not yet converted to TypeScript
-      await TimelineApp.Images.handlePaste(e, this.elements.markdownInput);
+      await this.images.handlePaste(e, this.elements.markdownInput);
     });
   }
 
@@ -712,14 +704,11 @@ export class TimelineApp {
       }
 
       this.searchTimeoutId = window.setTimeout(() => {
-        // @ts-expect-error - Search module not yet converted to TypeScript
-        TimelineApp.Search.applySearchAndFilter(query, this.elements.timelineOutput);
+        this.search.applySearchAndFilter(query, this.elements.timelineOutput);
 
         // Update presentation window if open
-        // @ts-expect-error - Presentation module not yet converted to TypeScript
-        if (TimelineApp.Presentation.isOpen()) {
-          // @ts-expect-error - Presentation module not yet converted to TypeScript
-          TimelineApp.Presentation.sendFiltersUpdate();
+        if (this.presentation.isOpen()) {
+          this.presentation.sendFiltersUpdate();
         }
       }, TIMING.SEARCH_DELAY);
     });
@@ -727,14 +716,11 @@ export class TimelineApp {
     this.elements.searchClear.addEventListener('click', () => {
       this.elements.searchInput.value = '';
       this.elements.searchClear.classList.remove('visible');
-      // @ts-expect-error - Search module not yet converted to TypeScript
-      TimelineApp.Search.applySearchAndFilter('', this.elements.timelineOutput);
+      this.search.applySearchAndFilter('', this.elements.timelineOutput);
 
       // Update presentation window if open
-      // @ts-expect-error - Presentation module not yet converted to TypeScript
-      if (TimelineApp.Presentation.isOpen()) {
-        // @ts-expect-error - Presentation module not yet converted to TypeScript
-        TimelineApp.Presentation.sendFiltersUpdate();
+      if (this.presentation.isOpen()) {
+        this.presentation.sendFiltersUpdate();
       }
     });
 
@@ -758,30 +744,24 @@ export class TimelineApp {
     );
     filterCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener('change', () => {
-        // @ts-expect-error - Search module not yet converted to TypeScript
-        TimelineApp.Search.toggleFilter(checkbox.value, checkbox.checked);
-        // @ts-expect-error - Search module not yet converted to TypeScript
-        TimelineApp.Search.updateFilterButton(
+        this.search.toggleFilter(checkbox.value, checkbox.checked);
+        this.search.updateFilterButton(
           this.elements.filterButton,
           this.elements.filterCount
         );
-        // @ts-expect-error - Search module not yet converted to TypeScript
-        TimelineApp.Search.applySearchAndFilter(
+        this.search.applySearchAndFilter(
           this.elements.searchInput.value,
           this.elements.timelineOutput
         );
 
         // Update presentation window if open
-        // @ts-expect-error - Presentation module not yet converted to TypeScript
-        if (TimelineApp.Presentation.isOpen()) {
-          // @ts-expect-error - Presentation module not yet converted to TypeScript
-          TimelineApp.Presentation.sendFiltersUpdate();
+        if (this.presentation.isOpen()) {
+          this.presentation.sendFiltersUpdate();
         }
       });
     });
 
-    // @ts-expect-error - Search module not yet converted to TypeScript
-    TimelineApp.Search.updateFilterButton(
+    this.search.updateFilterButton(
       this.elements.filterButton,
       this.elements.filterCount
     );
@@ -793,12 +773,9 @@ export class TimelineApp {
   private setupModals(): void {
     // Statistics Modal
     this.elements.statsToggle.addEventListener('click', () => {
-      // @ts-expect-error - Renderer module not yet converted to TypeScript
-      const events = TimelineApp.Renderer.getAllEvents();
-      // @ts-expect-error - Stats module not yet converted to TypeScript
-      TimelineApp.Stats.calculate(events);
-      // @ts-expect-error - Stats module not yet converted to TypeScript
-      TimelineApp.Stats.render();
+      const events = this.renderer.getAllEvents();
+      this.stats.calculate(events);
+      this.stats.render();
       this.elements.statsModal.classList.add('show');
       this.elements.statsToggle.classList.add('active');
     });
@@ -872,10 +849,8 @@ export class TimelineApp {
       this.parseAndRenderTimeline();
 
       // Update presentation window if open
-      // @ts-expect-error - Presentation module not yet converted to TypeScript
-      if (TimelineApp.Presentation.isOpen()) {
-        // @ts-expect-error - Presentation module not yet converted to TypeScript
-        TimelineApp.Presentation.sendMarkdownUpdate(template.content);
+      if (this.presentation.isOpen()) {
+        this.presentation.sendMarkdownUpdate(template.content);
       }
 
       this.elements.templatesModal.classList.remove('show');

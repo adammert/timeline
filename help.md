@@ -166,6 +166,25 @@ Dies erzeugt visuelle Verbindungslinien in der Timeline.
 
 ## 📋 Changelog
 
+### Version 1.3 - Bugfixes & Code-Qualität (Dezember 2024)
+
+#### 🐛 Bugfixes:
+- **EventType-Konsistenz:** Entfernung des unbenutzten `info` Event-Types
+- **Dependency Injection:** Saubere Architektur für Images-Service im Renderer
+- **Error Handling:** Robuste Fehlerbehandlung bei Initialisierung
+- **Null-Safety:** Verbesserte Null-Checks in Parser und Export-Modul
+- **Memory Leak:** Präsentationsfenster wird nun beim Schließen des Hauptfensters automatisch geschlossen
+- **Drag & Drop:** Besseres Handling von gemischten Datei-Typen (Bilder + Markdown)
+- **Export-Stabilität:** Sichere Title-Extraktion in allen Export-Formaten
+
+#### 🔧 Technische Verbesserungen:
+- TypeScript Strict Mode vollständig erfüllt
+- Verbesserte Race Condition Prevention im Drag & Drop Handler
+- Cleanup von Event-Listenern zur Vermeidung von Memory Leaks
+- Robusteres Error Handling mit benutzerfreundlichen Fehlermeldungen
+
+---
+
 ### Version 1.1 - Bild-Support (Januar 2025)
 
 #### 🎉 Neue Features:

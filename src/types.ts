@@ -2,7 +2,7 @@
  * Type definitions for Timeline Visualizer
  */
 
-export type EventType = 'critical' | 'warning' | 'success' | 'meeting' | 'work' | 'info';
+export type EventType = 'critical' | 'warning' | 'success' | 'meeting' | 'work';
 
 export type ThemeMode = 'light' | 'dark';
 

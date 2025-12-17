@@ -16,7 +16,6 @@ import { marked } from 'marked';
   let channel: BroadcastChannel | null = null;
   let lastUpdate = Date.now();
   let connectionCheckInterval: number | null = null;
-  let currentTheme = 'light';
   let activeFilters = new Set(['critical', 'warning', 'success', 'meeting', 'work', 'info', 'none']);
   let currentSearchQuery = '';
   const imagesService = new Images();
@@ -128,7 +127,6 @@ import { marked } from 'marked';
    */
   function applyTheme(theme: string): void {
     if (!theme) return;
-    currentTheme = theme;
     document.documentElement.setAttribute('data-theme', theme);
   }
 
@@ -215,7 +213,7 @@ import { marked } from 'marked';
   /**
    * Render single event
    */
-  function renderEvent(event: any, index: number, allEvents: any[]): void {
+  function renderEvent(event: any, index: number, _allEvents: any[]): void {
     const itemDiv = document.createElement('div');
     itemDiv.classList.add('timeline-item');
     if (event.endDate) itemDiv.classList.add('has-duration');

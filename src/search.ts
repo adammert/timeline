@@ -3,7 +3,6 @@
  */
 
 import { VALID_EVENT_CLASSES } from './config';
-import type { EventType } from './types';
 
 export class Search {
   private activeFilters: Set<string> = new Set([

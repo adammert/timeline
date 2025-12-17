@@ -17,8 +17,8 @@ interface PresentationMessage {
 export class Presentation {
   private presentationWindow: Window | null = null;
   private channel: BroadcastChannel | null = null;
-  private isConnected = false;
   private pingInterval: number | null = null;
+  private beforeUnloadHandler: (() => void) | null = null;
 
   /**
    * Open presentation window
@@ -67,7 +67,30 @@ export class Presentation {
     // Monitor window close
     this.monitorWindow();
 
+    // Setup beforeunload handler to close presentation window when main window closes
+    this.setupBeforeUnloadHandler();
+
     return true;
+  }
+
+  /**
+   * Setup beforeunload handler to close presentation window
+   */
+  private setupBeforeUnloadHandler(): void {
+    // Remove existing handler if any
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+    }
+
+    // Create new handler
+    this.beforeUnloadHandler = () => {
+      if (this.presentationWindow && !this.presentationWindow.closed) {
+        this.presentationWindow.close();
+      }
+    };
+
+    // Add handler
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
   /**
@@ -87,7 +110,6 @@ export class Presentation {
           this.sendUpdate();
         } else if (event.data.type === 'pong') {
           // Presentation window is alive
-          this.isConnected = true;
         } else if (event.data.type === 'presentation_closed') {
           // Presentation window closed
           this.cleanup();
@@ -250,8 +272,13 @@ export class Presentation {
       this.pingInterval = null;
     }
 
+    // Remove beforeunload handler
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+      this.beforeUnloadHandler = null;
+    }
+
     this.presentationWindow = null;
-    this.isConnected = false;
   }
 
   /**

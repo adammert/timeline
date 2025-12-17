@@ -3,7 +3,7 @@
  */
 
 import { MONTH_NAME_TO_INDEX, VALID_EVENT_CLASSES } from './config';
-import type { TimelineEvent, EventType } from './types';
+import type { EventType } from './types';
 
 interface ParsedDate {
   date: Date | null;
@@ -93,8 +93,16 @@ export class Parser {
       }
     }
     if (quarterMatch) {
-      const quarter = parseInt(quarterMatch[2] || '1');
-      const year = parseInt(quarterMatch[3] || '2025');
+      const quarterStr = quarterMatch[2];
+      const yearStr = quarterMatch[3];
+      if (!quarterStr || !yearStr) {
+        return { date: null, displayString: null, hasTime: false };
+      }
+      const quarter = parseInt(quarterStr, 10);
+      const year = parseInt(yearStr, 10);
+      if (isNaN(quarter) || isNaN(year) || quarter < 1 || quarter > 4) {
+        return { date: null, displayString: null, hasTime: false };
+      }
       parsedDateObject = new Date(year, (quarter - 1) * 3, 1);
       displayDateString = `Q${quarter} ${year}`;
       return {
@@ -113,17 +121,23 @@ export class Parser {
       }
     }
     if (monthNameMatch) {
-      const monthName = (monthNameMatch[1] || '').toLowerCase();
-      const year = parseInt(monthNameMatch[2] || '2025');
+      const monthNameStr = monthNameMatch[1];
+      const yearStr = monthNameMatch[2];
+      if (!monthNameStr || !yearStr) {
+        return { date: null, displayString: null, hasTime: false };
+      }
+      const monthName = monthNameStr.toLowerCase();
+      const year = parseInt(yearStr, 10);
+      if (isNaN(year)) {
+        return { date: null, displayString: null, hasTime: false };
+      }
       if (Object.prototype.hasOwnProperty.call(MONTH_NAME_TO_INDEX, monthName)) {
-        parsedDateObject = new Date(
-          year,
-          MONTH_NAME_TO_INDEX[monthName] || 0,
-          1
-        );
-        displayDateString = `${
-          monthNameMatch[1]?.charAt(0).toUpperCase() + monthNameMatch[1]?.slice(1)
-        } ${year}`;
+        const monthIndex = MONTH_NAME_TO_INDEX[monthName];
+        if (monthIndex === undefined) {
+          return { date: null, displayString: null, hasTime: false };
+        }
+        parsedDateObject = new Date(year, monthIndex, 1);
+        displayDateString = `${monthNameStr.charAt(0).toUpperCase() + monthNameStr.slice(1)} ${year}`;
         return {
           date: parsedDateObject,
           displayString: displayDateString,

@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Scrollbar */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-zinc-600 rounded;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-zinc-500;
+  }
+}
+
+/* Syntax Highlighting Tokens */
+@layer components {
+  .token-keyword {
+    @apply text-pink-400;
+  }
+
+  .token-string {
+    @apply text-purple-400;
+  }
+
+  .token-date {
+    @apply text-emerald-400;
+  }
+
+  .token-comment {
+    @apply text-gray-500 italic;
+  }
+
+  .token-header {
+    @apply text-blue-400 font-bold;
+  }
+}
+
+/* Timeline Line Styles */
+@layer components {
+  .timeline-line {
+    @apply absolute left-6 top-16 bottom-10 w-0.5 bg-gradient-to-b from-primary to-primary z-0;
+  }
+
+  .dashed-line {
+    @apply absolute left-6 top-6 bottom-0 border-l-2 border-dashed border-gray-600 dark:border-zinc-700 z-0;
+  }
+}

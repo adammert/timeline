@@ -4,6 +4,7 @@
 
 import { marked } from 'marked';
 import { Parser } from './parser';
+import type { Images } from './images';
 
 interface RawEventData {
   date: Date;
@@ -19,6 +20,11 @@ interface RawEventData {
 
 export class Renderer {
   private allEvents: RawEventData[] = [];
+  private images?: Images;
+
+  constructor(images?: Images) {
+    this.images = images;
+  }
 
   /**
    * Render timeline from markdown input
@@ -130,8 +136,8 @@ export class Renderer {
       }
 
       // Replace image references with actual images from IndexedDB
-      if ((window as any).TimelineApp?.Images) {
-        await (window as any).TimelineApp.Images.replaceImageReferences(timelineOutputContainer);
+      if (this.images) {
+        await this.images.replaceImageReferences(timelineOutputContainer);
       }
 
       // Add IntersectionObserver for scroll animations

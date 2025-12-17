@@ -75,7 +75,7 @@ export class TimelineApp {
     this.images = new Images();
     this.presentation = new Presentation();
     this.search = new Search();
-    this.renderer = new Renderer();
+    this.renderer = new Renderer(this.images);
     this.stats = new Stats();
     this.export = new Export(this.renderer, this.images);
   }
@@ -84,17 +84,23 @@ export class TimelineApp {
    * Initialize application
    */
   async init(): Promise<void> {
-    this.cacheDOMElements();
-    await this.initImages();
-    this.loadFromStorage();
-    this.loadTheme();
-    this.setupEventListeners();
-    this.setupResizable();
-    this.setupDragAndDrop();
-    this.setupSearchAndFilter();
-    this.setupModals();
-    this.setupTemplates();
-    await this.parseAndRenderTimeline();
+    try {
+      this.cacheDOMElements();
+      await this.initImages();
+      this.loadFromStorage();
+      this.loadTheme();
+      this.setupEventListeners();
+      this.setupResizable();
+      this.setupDragAndDrop();
+      this.setupSearchAndFilter();
+      this.setupModals();
+      this.setupTemplates();
+      await this.parseAndRenderTimeline();
+    } catch (error) {
+      console.error('Failed to initialize application:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      alert(`Fehler beim Initialisieren der Anwendung:\n${errorMessage}\n\nBitte laden Sie die Seite neu.`);
+    }
   }
 
   /**
@@ -640,53 +646,76 @@ export class TimelineApp {
 
       console.log('Files dropped:', files.length);
 
-      // First, check if there are any images
-      const hasImages = Array.from(files).some((file) =>
-        file.type.startsWith('image/')
-      );
-
-      if (hasImages) {
-        // Handle images using the Images module
-        console.log('Processing images...');
-        const imagesHandled = await this.images.handleDrop(
-          e,
-          this.elements.markdownInput
+      try {
+        // Separate files into images and other files
+        const imageFiles = Array.from(files).filter((file) =>
+          file.type.startsWith('image/')
+        );
+        const otherFiles = Array.from(files).filter((file) =>
+          !file.type.startsWith('image/')
         );
 
-        if (imagesHandled) {
-          console.log('Images successfully handled');
-          return;
-        }
-      }
+        // Handle images first if present
+        if (imageFiles.length > 0) {
+          console.log('Processing images...');
+          try {
+            const imagesHandled = await this.images.handleDrop(
+              e,
+              this.elements.markdownInput
+            );
 
-      // No images or image handling failed - check for markdown files
-      const file = files[0];
-      if (!file) return;
-
-      console.log('Checking file:', file.name, file.type);
-
-      if (
-        file.name.endsWith('.md') ||
-        file.type === 'text/markdown' ||
-        file.type === 'text/plain'
-      ) {
-        console.log('Loading markdown file...');
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          const result = evt.target?.result as string;
-          this.elements.markdownInput.value = result;
-          this.storage.saveToHistory(result);
-          this.storage.saveToLocalStorage(result);
-          this.parseAndRenderTimeline();
-
-          // Update presentation window if open
-          if (this.presentation.isOpen()) {
-            this.presentation.sendUpdate(result);
+            if (imagesHandled) {
+              console.log('Images successfully handled');
+              // If there are also other files, don't return yet
+              if (otherFiles.length === 0) {
+                return;
+              }
+            }
+          } catch (error) {
+            console.error('Error handling images:', error);
+            alert('Fehler beim Verarbeiten der Bilder. Siehe Konsole für Details.');
+            // Continue to try handling other files
           }
-        };
-        reader.readAsText(file, 'utf-8');
-      } else if (!hasImages) {
-        alert('Bitte nur .md, Text-Dateien oder Bilder ablegen.');
+        }
+
+        // Handle markdown/text files
+        if (otherFiles.length > 0) {
+          const file = otherFiles[0];
+          console.log('Checking file:', file.name, file.type);
+
+          if (
+            file.name.endsWith('.md') ||
+            file.type === 'text/markdown' ||
+            file.type === 'text/plain'
+          ) {
+            console.log('Loading markdown file...');
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              const result = evt.target?.result;
+              if (typeof result === 'string') {
+                this.elements.markdownInput.value = result;
+                this.storage.saveToHistory(result);
+                this.storage.saveToLocalStorage(result);
+                this.parseAndRenderTimeline();
+
+                // Update presentation window if open
+                if (this.presentation.isOpen()) {
+                  this.presentation.sendUpdate(result);
+                }
+              }
+            };
+            reader.onerror = () => {
+              alert('Fehler beim Laden der Markdown-Datei.');
+            };
+            reader.readAsText(file, 'utf-8');
+          } else if (imageFiles.length === 0) {
+            // Only show error if there were no images to handle
+            alert('Bitte nur .md, Text-Dateien oder Bilder ablegen.');
+          }
+        }
+      } catch (error) {
+        console.error('Error in drop handler:', error);
+        alert('Fehler beim Verarbeiten der abgelegten Dateien.');
       }
     });
 

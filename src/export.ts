@@ -33,6 +33,19 @@ export class Export {
   }
 
   /**
+   * Safely get title from callback
+   */
+  private safeGetTitle(getCurrentTitle: () => string): string {
+    try {
+      const title = getCurrentTitle();
+      return title || '';
+    } catch (e) {
+      console.error('Error getting title:', e);
+      return '';
+    }
+  }
+
+  /**
    * Sanitize filename
    */
   sanitizeFilename(name: string | null | undefined, fallback: string = "timeline"): string {
@@ -115,7 +128,7 @@ export class Export {
       return fullMarkdown.substring(event.startPos, event.endPos).trim();
     });
 
-    const title = getCurrentTitle();
+    const title = this.safeGetTitle(getCurrentTitle);
     const titleBlock = title ? `# ${title}\n\n` : "";
     const filteredMarkdown = titleBlock + markdownChunks.join('\n\n---\n\n');
 
@@ -163,7 +176,7 @@ export class Export {
       return fullMarkdown.substring(event.startPos, event.endPos).trim();
     });
 
-    const title = getCurrentTitle();
+    const title = this.safeGetTitle(getCurrentTitle);
     const titleBlock = title ? `# ${title}\n\n` : "";
     const filteredMarkdown = titleBlock + markdownChunks.join('\n\n---\n\n');
     const markdownContent = filteredMarkdown;
@@ -174,7 +187,7 @@ export class Export {
             'Bitte verwenden Sie Chrome oder Edge.\n\n' +
             'Exportiere nur Markdown-Datei ohne Bilder...');
       this.downloadFile(
-        `${this.getDateTimePrefix()}-${this.sanitizeFilename(getCurrentTitle(), "timeline-data")}.md`,
+        `${this.getDateTimePrefix()}-${this.sanitizeFilename(this.safeGetTitle(getCurrentTitle), "timeline-data")}.md`,
         markdownContent,
         "text/markdown;charset=utf-8"
       );
@@ -195,7 +208,7 @@ export class Export {
       if (imageNames.size === 0) {
         // No images, just save markdown
         this.downloadFile(
-          `${this.getDateTimePrefix()}-${this.sanitizeFilename(getCurrentTitle(), "timeline-data")}.md`,
+          `${this.getDateTimePrefix()}-${this.sanitizeFilename(this.safeGetTitle(getCurrentTitle), "timeline-data")}.md`,
           markdownContent,
           "text/markdown;charset=utf-8"
         );
@@ -223,7 +236,7 @@ export class Export {
       }
 
       // Save markdown file
-      const base = this.sanitizeFilename(getCurrentTitle(), "timeline-data");
+      const base = this.sanitizeFilename(this.safeGetTitle(getCurrentTitle), "timeline-data");
       const prefix = this.getDateTimePrefix();
       const filename = `${prefix}-${base}.md`;
 
@@ -418,7 +431,7 @@ export class Export {
     const styles = `<style>:root{--primary-color:#007bff;--secondary-color:#6c757d;--background-color:#f8f9fa;--panel-background:#fff;--text-color:#333;--line-color:#dee2e6;--dot-color:var(--primary-color);--font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}[data-theme="dark"]{--primary-color:#4da6ff;--secondary-color:#a8b2bd;--background-color:#1a1a1a;--panel-background:#2d2d2d;--text-color:#e0e0e0;--line-color:#404040;--dot-color:var(--primary-color)}body{font-family:var(--font-family);margin:20px;background-color:var(--background-color);color:var(--text-color);line-height:1.6;transition:background-color 0.3s ease,color 0.3s ease}.timeline{position:relative;padding:20px 0;max-width:800px;margin:0 auto}.timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;width:4px;background-color:var(--line-color);border-radius:2px}.timeline-item{position:relative;margin-bottom:30px;padding-left:50px}.timeline-item::before{content:'';position:absolute;left:10px;top:5px;width:24px;height:24px;background-color:var(--dot-color);border:4px solid var(--background-color);border-radius:50%;z-index:1}.timeline-item:last-child{margin-bottom:0}.timeline-content{background-color:var(--panel-background);border:1px solid var(--line-color);padding:15px 20px;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);transition:background-color 0.3s ease}.timeline-content img{max-width:100%;height:auto;border-radius:4px;margin:10px 0}.timeline-date{font-weight:bold;color:var(--primary-color);margin-bottom:8px;font-size:0.9em}.timeline-content h1,.timeline-content h2,.timeline-content h3{margin-top:0;color:var(--primary-color)}.timeline-content p{margin-bottom:0.5em}.timeline-content ul,.timeline-content ol{padding-left:20px}.timeline-content code{background-color:#e9ecef;padding:0.2em 0.4em;border-radius:3px;font-family:Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace}[data-theme="dark"] .timeline-content code{background-color:#404040}.timeline-content pre{background-color:#e9ecef;padding:1em;border-radius:4px;overflow-x:auto}[data-theme="dark"] .timeline-content pre{background-color:#404040}.is-critical{border-left:5px solid #dc3545}.is-warning{border-left:5px solid #ffc107}.is-success{border-left:5px solid #28a745}.is-meeting{border-left:5px solid #17a2b8}.is-work{border-left:5px solid #6f42c1}.duration-label{display:block;font-size:0.8em;color:var(--secondary-color);margin-top:4px}.duration-bar{position:absolute;left:20px;top:28px;width:4px;background-color:var(--dot-color);opacity:0.5;transform:translateX(-2px)}.duration-end-marker{position:absolute;left:20px;width:16px;height:16px;background-color:var(--dot-color);border-radius:50%;transform:translate(-8px,-4px)}.filtered-out{display:none!important}.no-results-message{text-align:center;padding:20px;color:var(--secondary-color)}.timeline-title{text-align:center;color:var(--primary-color);margin-bottom:30px}body>div.timeline{padding-top:0}</style>`;
 
     const fullHtml = `<!DOCTYPE html><html lang="de" data-theme="${currentTheme}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Timeline Export</title>${styles}</head><body><div class="timeline">${processedHtml}</div></body></html>`;
-    const base = this.sanitizeFilename(getCurrentTitle(), "timeline");
+    const base = this.sanitizeFilename(this.safeGetTitle(getCurrentTitle), "timeline");
     const prefix = this.getDateTimePrefix();
     this.downloadFile(
       `${prefix}-${base}.html`,
@@ -517,7 +530,7 @@ export class Export {
       const image = canvas.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = image;
-      const base = this.sanitizeFilename(getCurrentTitle(), "timeline");
+      const base = this.sanitizeFilename(this.safeGetTitle(getCurrentTitle), "timeline");
       const prefix = this.getDateTimePrefix();
       a.download = `${prefix}-${base}.png`;
       document.body.appendChild(a);
@@ -583,7 +596,7 @@ export class Export {
       const contentWidth = pageWidth - 2 * margin;
       let yPosition = margin;
 
-      const title = getCurrentTitle() || "Timeline";
+      const title = this.safeGetTitle(getCurrentTitle) || "Timeline";
       pdf.setFontSize(18);
       (pdf as any).setFont(undefined, "bold");
       pdf.text(title, pageWidth / 2, yPosition, { align: "center" });
@@ -626,7 +639,7 @@ export class Export {
         yPosition += 5;
       }
 
-      const base = this.sanitizeFilename(getCurrentTitle(), "timeline");
+      const base = this.sanitizeFilename(this.safeGetTitle(getCurrentTitle), "timeline");
       const prefix = this.getDateTimePrefix();
       pdf.save(`${prefix}-${base}.pdf`);
     } catch (error: any) {

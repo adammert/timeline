@@ -87,4 +87,58 @@ describe('Parser', () => {
       expect(result.date).toBe(null);
     });
   });
+
+  describe('parseEvents', () => {
+    it('should parse a single simple event', () => {
+      const text = 'date: 2025-01-01\nEvent content';
+      const result = Parser.parseEvents(text, 0);
+      expect(result.length).toBe(1);
+      expect(result[0].date.getFullYear()).toBe(2025);
+      expect(result[0].content).toBe('Event content');
+    });
+
+    it('should parse multiple events separated by ---', () => {
+      const text = 'date: 2025-01-01\nEvent 1\n---\ndate: 2025-01-02\nEvent 2';
+      const result = Parser.parseEvents(text, 0);
+      expect(result.length).toBe(2);
+      expect(result[0].content).toBe('Event 1');
+      expect(result[1].content).toBe('Event 2');
+    });
+
+    it('should handle metadata like group and class', () => {
+      const text = 'date: 2025-01-01\ngroup: Work\nclass: urgent\nImportant event';
+      const result = Parser.parseEvents(text, 0);
+      expect(result[0].group).toBe('Work');
+      expect(result[0].eventClass).toBe('is-urgent');
+      expect(result[0].content).toBe('Important event');
+    });
+
+    it('should handle events with end_date', () => {
+      const text = 'date: 2025-01-01\nend_date: 2025-01-05\nLong event';
+      const result = Parser.parseEvents(text, 0);
+      expect(result[0].endDate?.getFullYear()).toBe(2025);
+      expect(result[0].endDate?.getDate()).toBe(5);
+    });
+
+    it('should provide error message for missing date', () => {
+      const text = 'Just content without date';
+      const result = Parser.parseEvents(text, 0);
+      expect(result[0].content).toContain('Fehler');
+      expect(result[0].date.getTime()).toBe(0);
+    });
+  });
+
+  describe('calculateDuration', () => {
+    it('should calculate days correctly', () => {
+      const start = new Date(2025, 0, 1);
+      const end = new Date(2025, 0, 5);
+      expect(Parser.calculateDuration(start, end)).toBe('4 Tage');
+    });
+
+    it('should calculate weeks correctly', () => {
+      const start = new Date(2025, 0, 1);
+      const end = new Date(2025, 0, 15);
+      expect(Parser.calculateDuration(start, end)).toBe('2 Wochen');
+    });
+  });
 });

@@ -8,8 +8,8 @@
 
 ## Phase 2: Parser Unit Tests
 - [x] Task: Create `src/modules/parser.test.ts`.
-- [ ] Task: Write tests for `extractTitleFromMarkdown`.
-- [ ] Task: Write tests for `parseDate` (covering all supported formats).
+- [x] Task: Write tests for `extractTitleFromMarkdown`.
+- [x] Task: Write tests for `parseDate` (covering all supported formats).
 - [ ] Task: Write tests for `parseEvents`.
 - [ ] Task: Conductor - User Manual Verification 'Parser Unit Tests' (Protocol in workflow.md)
 

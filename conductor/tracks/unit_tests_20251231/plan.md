@@ -14,11 +14,11 @@
 - [x] Task: Conductor - User Manual Verification 'Parser Unit Tests' (Protocol in workflow.md)
 
 ## Phase 3: Storage Unit Tests
-- [ ] Task: Create `src/modules/storage.test.ts`.
-- [ ] Task: Implement `localStorage` mock for the test environment.
-- [ ] Task: Write tests for `saveToLocalStorage` and `loadFromLocalStorage`.
-- [ ] Task: Write tests for `saveToHistory` and `undo`/`redo` logic.
-- [ ] Task: Conductor - User Manual Verification 'Storage Unit Tests' (Protocol in workflow.md)
+- [x] Task: Create `src/modules/storage.test.ts`.
+- [x] Task: Implement `localStorage` mock for the test environment.
+- [x] Task: Write tests for `saveToLocalStorage` and `loadFromLocalStorage`.
+- [x] Task: Write tests for `saveToHistory` and `undo`/`redo` logic.
+- [x] Task: Conductor - User Manual Verification 'Storage Unit Tests' (Protocol in workflow.md)
 
 ## Phase 4: Final Verification and Coverage
 - [ ] Task: Run tests with coverage reporting.

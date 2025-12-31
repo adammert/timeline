@@ -7,7 +7,7 @@
 - [x] Task: Conductor - User Manual Verification 'Setup Testing Environment' (Protocol in workflow.md)
 
 ## Phase 2: Parser Unit Tests
-- [ ] Task: Create `src/modules/parser.test.ts`.
+- [x] Task: Create `src/modules/parser.test.ts`.
 - [ ] Task: Write tests for `extractTitleFromMarkdown`.
 - [ ] Task: Write tests for `parseDate` (covering all supported formats).
 - [ ] Task: Write tests for `parseEvents`.

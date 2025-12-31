@@ -21,6 +21,6 @@
 - [x] Task: Conductor - User Manual Verification 'Storage Unit Tests' (Protocol in workflow.md)
 
 ## Phase 4: Final Verification and Coverage
-- [ ] Task: Run tests with coverage reporting.
-- [ ] Task: Ensure coverage for `parser.ts` and `storage.ts` exceeds 80%.
-- [ ] Task: Conductor - User Manual Verification 'Final Verification and Coverage' (Protocol in workflow.md)
+- [x] Task: Run tests with coverage reporting.
+- [x] Task: Ensure coverage for `parser.ts` and `storage.ts` exceeds 80%.
+- [x] Task: Conductor - User Manual Verification 'Final Verification and Coverage' (Protocol in workflow.md)

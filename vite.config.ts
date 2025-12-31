@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
@@ -25,4 +26,8 @@ export default defineConfig({
   preview: {
     port: 4173,
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+  }
 });

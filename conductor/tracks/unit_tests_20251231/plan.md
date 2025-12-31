@@ -1,10 +1,10 @@
 # Plan: Add Unit Tests for Core Modules
 
 ## Phase 1: Setup Testing Environment
-- [ ] Task: Install Vitest and related dependencies (`npm install -D vitest @vitest/coverage-v8`).
-- [ ] Task: Configure Vitest in `vite.config.ts` or a dedicated `vitest.config.ts`.
-- [ ] Task: Update `package.json` with a `test` script.
-- [ ] Task: Conductor - User Manual Verification 'Setup Testing Environment' (Protocol in workflow.md)
+- [x] Task: Install Vitest and related dependencies (`npm install -D vitest @vitest/coverage-v8`).
+- [x] Task: Configure Vitest in `vite.config.ts` or a dedicated `vitest.config.ts`.
+- [x] Task: Update `package.json` with a `test` script.
+- [x] Task: Conductor - User Manual Verification 'Setup Testing Environment' (Protocol in workflow.md)
 
 ## Phase 2: Parser Unit Tests
 - [ ] Task: Create `src/modules/parser.test.ts`.

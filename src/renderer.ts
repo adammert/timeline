@@ -165,6 +165,69 @@ export class Renderer {
   }
 
   /**
+   * Get class-specific styling configuration
+   */
+  private getClassConfig(eventClass: string | null): {
+    borderColor: string;
+    glowClass: string;
+    gradientFrom: string;
+    titleColor: string;
+    dotColor: string;
+  } {
+    const configs: Record<string, {
+      borderColor: string;
+      glowClass: string;
+      gradientFrom: string;
+      titleColor: string;
+      dotColor: string;
+    }> = {
+      'is-critical': {
+        borderColor: 'border-red-500',
+        glowClass: 'dark:shadow-glow-danger',
+        gradientFrom: 'from-red-500/10',
+        titleColor: 'text-red-500',
+        dotColor: 'bg-red-500'
+      },
+      'is-warning': {
+        borderColor: 'border-amber-500',
+        glowClass: 'dark:shadow-glow-warning',
+        gradientFrom: 'from-amber-500/10',
+        titleColor: 'text-amber-500',
+        dotColor: 'bg-amber-500'
+      },
+      'is-success': {
+        borderColor: 'border-green-500',
+        glowClass: 'dark:shadow-glow-success',
+        gradientFrom: 'from-green-500/10',
+        titleColor: 'text-green-500',
+        dotColor: 'bg-green-500'
+      },
+      'is-meeting': {
+        borderColor: 'border-purple-500',
+        glowClass: 'dark:shadow-glow-purple',
+        gradientFrom: 'from-purple-500/10',
+        titleColor: 'text-purple-500',
+        dotColor: 'bg-purple-500'
+      },
+      'is-work': {
+        borderColor: 'border-blue-500',
+        glowClass: 'dark:shadow-glow',
+        gradientFrom: 'from-blue-500/10',
+        titleColor: 'text-blue-500',
+        dotColor: 'bg-blue-500'
+      }
+    };
+
+    return configs[eventClass || ''] || {
+      borderColor: 'border-primary',
+      glowClass: 'dark:shadow-glow',
+      gradientFrom: 'from-primary/10',
+      titleColor: 'text-primary',
+      dotColor: 'bg-primary'
+    };
+  }
+
+  /**
    * Render single event
    */
   renderEvent(
@@ -174,64 +237,132 @@ export class Renderer {
     container: HTMLElement,
     _isSwimlaneMode: boolean = false
   ): HTMLDivElement {
+    const classConfig = this.getClassConfig(event.eventClass);
+
+    // Main container with group for hover effects
     const itemDiv = document.createElement("div");
-    itemDiv.classList.add("timeline-item");
+    itemDiv.classList.add(
+      "timeline-item",
+      "relative",
+      "pl-16",
+      "mb-12",
+      "group"
+    );
     itemDiv.dataset.startPos = String(event.startPos);
     itemDiv.dataset.endPos = String(event.endPos);
 
     if (event.endDate) itemDiv.classList.add("has-duration");
 
-    const dateDiv = document.createElement("div");
-    dateDiv.classList.add("timeline-date");
+    // Timeline dot with hover scale animation
+    const dotDiv = document.createElement("div");
+    dotDiv.className = `absolute left-[16px] top-6 w-4 h-4 rounded-full ${classConfig.dotColor} border-4 border-white dark:border-background-dark z-10 shadow-lg transform group-hover:scale-125 transition-transform duration-300`;
+    itemDiv.appendChild(dotDiv);
+
+    // Duration line for events with end_date
+    if (event.endDate && event.date < event.endDate) {
+      const durationLine = document.createElement("div");
+      durationLine.className = "absolute left-[23px] top-6 bottom-[-60px] w-0.5 bg-blue-500/30 z-0 duration-connector";
+      itemDiv.appendChild(durationLine);
+    }
+
+    // Date container
+    const dateContainerDiv = document.createElement("div");
+    dateContainerDiv.className = "mb-2 flex items-center flex-wrap gap-2";
+
+    // Date badge (primary date display)
+    const dateBadge = document.createElement("div");
+    dateBadge.className = "flex items-center";
+
+    const dateSpan = document.createElement("span");
+    dateSpan.className = `${classConfig.titleColor} font-bold text-sm bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded mr-2`;
 
     if (event.date.getTime() === 0) {
-      dateDiv.textContent = "Fehlerhaftes Event";
-      dateDiv.style.color = "red";
+      dateSpan.textContent = "Fehlerhaftes Event";
+      dateSpan.className = "text-red-500 font-bold text-sm bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded mr-2";
     } else {
-      const weekdayLabel = this.getWeekdayLabel(event.date);
-
+      let formattedDate: string;
       if (event.displayDateString) {
-        dateDiv.textContent = weekdayLabel
-          ? event.displayDateString + " (" + weekdayLabel + ")"
-          : event.displayDateString;
+        formattedDate = event.displayDateString;
       } else {
-        let formattedDate = event.date.toLocaleDateString("de-DE", {
+        formattedDate = event.date.toLocaleDateString("de-DE", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit"
         });
         if (event.explicitTimeProvided) {
-          formattedDate +=
-            " " +
-            event.date.toLocaleTimeString("de-DE", {
-              hour: "2-digit",
-              minute: "2-digit"
-            });
+          formattedDate += " " + event.date.toLocaleTimeString("de-DE", {
+            hour: "2-digit",
+            minute: "2-digit"
+          });
         }
-        if (weekdayLabel) {
-          formattedDate += " (" + weekdayLabel + ")";
-        }
-        dateDiv.textContent = formattedDate;
+      }
+      dateSpan.textContent = formattedDate;
+    }
+    dateBadge.appendChild(dateSpan);
+
+    // Weekday label
+    if (event.date.getTime() !== 0) {
+      const weekdayLabel = this.getWeekdayLabel(event.date);
+      if (weekdayLabel) {
+        const weekdaySpan = document.createElement("span");
+        weekdaySpan.className = "text-gray-500 dark:text-gray-400 text-sm";
+        weekdaySpan.textContent = `(${weekdayLabel})`;
+        dateBadge.appendChild(weekdaySpan);
       }
     }
 
+    dateContainerDiv.appendChild(dateBadge);
+
+    // Duration badge for events with end_date
     if (event.endDate && event.date.getTime() !== 0) {
-      const durationSpan = document.createElement("span");
-      durationSpan.className = "duration-label";
-      durationSpan.textContent = Parser.calculateDuration(
-        event.date,
-        event.endDate
-      );
-      dateDiv.appendChild(durationSpan);
+      const durationBadge = document.createElement("span");
+      durationBadge.className = "text-xs bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full";
+      durationBadge.textContent = Parser.calculateDuration(event.date, event.endDate);
+      dateContainerDiv.appendChild(durationBadge);
     }
 
+    itemDiv.appendChild(dateContainerDiv);
+
+    // Content card with gradient overlay and glow effect
     const contentDiv = document.createElement("div");
-    contentDiv.classList.add("timeline-content");
+    contentDiv.className = `timeline-content bg-white dark:bg-surface-dark rounded-xl p-5 border-l-4 ${classConfig.borderColor} shadow-md hover:shadow-xl ${classConfig.glowClass} transition-all duration-300 relative overflow-hidden`;
     if (event.eventClass) contentDiv.classList.add(event.eventClass);
+
+    // Gradient overlay
+    const gradientOverlay = document.createElement("div");
+    gradientOverlay.className = `absolute inset-0 bg-gradient-to-r ${classConfig.gradientFrom} to-transparent pointer-events-none`;
+    contentDiv.appendChild(gradientOverlay);
+
+    // Content wrapper (for z-index over gradient)
+    const contentWrapper = document.createElement("div");
+    contentWrapper.className = "relative z-10";
 
     // Create temporary container for parsing
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = marked.parse(event.content || "Kein Inhalt.") as string;
+
+    // Style headings with class-specific colors
+    const headings = tempDiv.querySelectorAll('h1, h2, h3');
+    headings.forEach(heading => {
+      heading.classList.add('font-bold', 'mb-2', classConfig.titleColor);
+      if (heading.tagName === 'H1' || heading.tagName === 'H2') {
+        heading.classList.add('text-xl');
+      } else {
+        heading.classList.add('text-lg');
+      }
+    });
+
+    // Style paragraphs
+    const paragraphs = tempDiv.querySelectorAll('p');
+    paragraphs.forEach(p => {
+      p.classList.add('text-gray-600', 'dark:text-gray-300');
+    });
+
+    // Style lists
+    const lists = tempDiv.querySelectorAll('ul, ol');
+    lists.forEach(list => {
+      list.classList.add('list-disc', 'list-inside', 'space-y-1', 'text-gray-600', 'dark:text-gray-300');
+    });
 
     // Find and replace all images with images/ prefix BEFORE adding to DOM
     const images = tempDiv.querySelectorAll('img');
@@ -239,22 +370,22 @@ export class Renderer {
       const src = img.getAttribute('src');
       if (src && src.startsWith('images/')) {
         const filename = src.replace('images/', '');
-        // Set placeholder and data attribute
         img.setAttribute('src', 'data:image/gif;base64,R0lGODlhAQABAAAAACw=');
         img.setAttribute('data-filename', filename);
         img.style.display = 'none';
       }
+      img.classList.add('rounded-lg', 'mt-2');
     });
 
-    // Now move the processed content to the actual contentDiv
+    // Now move the processed content to the content wrapper
     while (tempDiv.firstChild) {
-      contentDiv.appendChild(tempDiv.firstChild);
+      contentWrapper.appendChild(tempDiv.firstChild);
     }
 
-    itemDiv.appendChild(dateDiv);
+    contentDiv.appendChild(contentWrapper);
     itemDiv.appendChild(contentDiv);
 
-    // Add duration bar if end date exists
+    // Add duration bar if end date exists (for legacy compatibility)
     if (event.endDate && event.date < event.endDate) {
       setTimeout(() => {
         this.renderDurationBar(itemDiv, event, index, allEvents, container);

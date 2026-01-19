@@ -2,6 +2,7 @@
  * Main Entry Point for Timeline Visualizer
  */
 
+import './styles/tailwind.css';
 import './styles/styles.css';
 import { TimelineApp } from './app';
 

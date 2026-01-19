@@ -46,3 +46,85 @@ textarea.highlight-scroll,
 }
 
 /* Timeline-specific animations handled in tailwind.css */
+
+/* ========================================
+   Swimlane Layout - Grid Support
+   ======================================== */
+.timeline.is-swimlanes {
+  display: grid;
+  grid-template-columns: repeat(var(--num-lanes, 1), 1fr);
+  column-gap: 2rem;
+  padding-top: 20px;
+}
+
+.timeline-lane-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #f3f4f6;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 700;
+  color: #3B82F6;
+  border-bottom: 2px solid #3B82F6;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(12px);
+  grid-row: 1;
+}
+
+.dark .timeline-lane-header {
+  background-color: rgba(30, 41, 59, 0.9);
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+.timeline.is-swimlanes .timeline-item {
+  grid-column: var(--lane-col, auto);
+  margin-bottom: 2rem;
+  padding-left: 20px;
+}
+
+/* Adjust main vertical line for swimlanes */
+.timeline.is-swimlanes::before {
+  left: auto;
+  width: 0;
+  background: none;
+}
+
+/* Adjust item dots/lines for swimlanes */
+.timeline.is-swimlanes .timeline-item::before {
+  left: -8px;
+}
+
+.timeline.is-swimlanes .current-date-marker {
+  grid-column: 1 / -1;
+  margin: 2rem 0;
+  padding-left: 0;
+  justify-content: center;
+}
+
+.timeline.is-swimlanes .current-date-marker::before {
+  left: 0;
+  right: 0;
+}
+
+/* Responsive Fallback: On small screens, stack everything back to linear */
+@media (max-width: 768px) {
+  .timeline.is-swimlanes {
+    display: block;
+  }
+
+  .timeline.is-swimlanes .timeline-item {
+    padding-left: 60px;
+  }
+
+  .timeline-lane-header {
+    position: relative;
+    top: auto;
+    background: transparent;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+    text-align: left;
+    padding-left: 60px;
+  }
+}

@@ -9,6 +9,10 @@
 - **Exporting (Images):** html2canvas - For capturing the visual timeline as PNG.
 - **Exporting (Documents):** jsPDF - For generating PDF versions of the timeline.
 
+## Testing
+- **Framework:** Vitest - For unit and integration testing.
+- **Environment:** jsdom - To simulate browser environment in tests.
+
 ## Infrastructure & Environment
 - **Runtime:** Browser-based (Client-side only)
 - **State Management:** LocalStorage - For persistence without a backend database.

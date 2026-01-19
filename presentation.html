@@ -5,10 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Timeline Präsentation</title>
-
-  <!-- Vite Entry Point -->
-  <script type="module" src="/src/presentation-main.ts"></script>
-
+  <link rel="stylesheet" href="/src/styles/main.css">
   <style>
     /* Presentation-specific styles */
     body {
@@ -29,111 +26,83 @@
 
     /* Enhanced fonts for presentation */
     .timeline-title {
-      font-size: 2.8em;
-      margin-bottom: 60px;
+      font-size: 2.5em;
+      margin-bottom: 50px;
       font-weight: 700;
-      letter-spacing: -0.5px;
     }
 
     .timeline-item {
-      padding-left: 80px;
-      margin-bottom: 50px;
+      padding-left: 75px;
+      margin-bottom: 45px;
     }
 
     .timeline-item::before {
-      left: 18px;
-      width: 28px;
-      height: 28px;
-      border-width: 4px;
-      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.3), 0 3px 8px rgba(0, 0, 0, 0.15);
+      left: 17px;
+      width: 32px;
+      height: 32px;
+      border-width: 5px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
 
     .timeline::before {
       left: 32px;
-      width: 4px;
-      opacity: 0.8;
+      width: 5px;
     }
 
     .timeline-date {
-      font-size: 1.1em;
-      margin-bottom: 14px;
+      font-size: 1.15em;
+      margin-bottom: 12px;
       font-weight: 600;
-      letter-spacing: 0.3px;
     }
 
     .timeline-content {
-      font-size: 1.15em;
-      padding: 26px 32px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+      font-size: 1.1em;
+      padding: 22px 28px;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
     }
 
     .timeline-content:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.08);
-      border-color: rgba(0, 123, 255, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     }
 
     .timeline-content h1 {
-      font-size: 1.65em;
-      margin-bottom: 0.65em;
-      font-weight: 700;
-      letter-spacing: -0.3px;
+      font-size: 1.75em;
+      margin-bottom: 0.6em;
     }
 
     .timeline-content h2 {
-      font-size: 1.45em;
-      margin-bottom: 0.65em;
-      letter-spacing: -0.2px;
+      font-size: 1.5em;
+      margin-bottom: 0.6em;
     }
 
     .timeline-content h3 {
-      font-size: 1.25em;
-      margin-bottom: 0.65em;
-      letter-spacing: -0.1px;
+      font-size: 1.3em;
+      margin-bottom: 0.6em;
     }
 
     .timeline-content p {
-      margin-bottom: 0.85em;
-      line-height: 1.75;
+      margin-bottom: 0.9em;
+      line-height: 1.7;
     }
 
     .duration-bar {
-      left: 36px;
-      width: 3px;
+      left: 34px;
     }
 
     .duration-end-marker {
-      left: 18px;
-      width: 28px;
-      height: 28px;
+      left: 17px;
+      width: 32px;
+      height: 32px;
       border-width: 4px;
     }
 
     .duration-label {
-      font-size: 0.9em;
-      padding: 5px 12px;
-      border-radius: 6px;
+      font-size: 0.85em;
+      padding: 4px 10px;
+      border-radius: 5px;
       font-weight: 500;
-    }
-
-    /* Swimlane enhancements for presentation */
-    .timeline.is-swimlanes .timeline-lane-header {
-      font-size: 1.2em;
-      padding: 18px 15px 25px;
-      letter-spacing: 0.5px;
-    }
-
-    .timeline.is-swimlanes .timeline-title {
-      margin-bottom: 60px;
-    }
-
-    .timeline.is-swimlanes .timeline-item {
-      padding-left: 70px;
-    }
-
-    .timeline.is-swimlanes .timeline-item::before {
-      left: 10px;
     }
 
     /* Loading indicator */
@@ -232,6 +201,8 @@
     </div>
   </div>
 
+  <script type="module" src="/src/presentation.ts"></script>
+  <script type="module" src="/src/presentation.ts"></script>
 </body>
 
 </html>

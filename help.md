@@ -1,6 +1,6 @@
 # Timeline Visualizer - Hilfe & Dokumentation
 
-**Version 1.1** | Alle Daten werden nur lokal im Browser gespeichert
+**Version 2.0** | Alle Daten werden nur lokal im Browser gespeichert
 
 ---
 
@@ -26,6 +26,7 @@ Ereignisse werden durch `---` getrennt und folgen diesem Format:
 ```
 date: 2025-01-15 14:30:00
 end_date: 2025-01-20 (optional)
+group: Marketing (optional, für Swimlanes)
 class: warning (optional)
 ## Titel (optional)
 Inhalt in Markdown-Format
@@ -47,6 +48,7 @@ Die Timeline unterstützt verschiedene Datumsformate:
 - **Deutsches Format:** `15.01.2025` oder `15.01.2025 14:30`
 - **Quartale:** `Q1 2025` oder `2025 Q1`
 - **Monatsnamen:** `Januar 2025` oder `2025 Januar`
+- **Gruppen:** `group: Team A` oder `lane: Entwicklung`
 
 ---
 
@@ -166,22 +168,13 @@ Dies erzeugt visuelle Verbindungslinien in der Timeline.
 
 ## 📋 Changelog
 
-### Version 1.3 - Bugfixes & Code-Qualität (Dezember 2024)
+### Version 2.0 - Swimlanes & Animationen (Dezember 2025)
 
-#### 🐛 Bugfixes:
-- **EventType-Konsistenz:** Entfernung des unbenutzten `info` Event-Types
-- **Dependency Injection:** Saubere Architektur für Images-Service im Renderer
-- **Error Handling:** Robuste Fehlerbehandlung bei Initialisierung
-- **Null-Safety:** Verbesserte Null-Checks in Parser und Export-Modul
-- **Memory Leak:** Präsentationsfenster wird nun beim Schließen des Hauptfensters automatisch geschlossen
-- **Drag & Drop:** Besseres Handling von gemischten Datei-Typen (Bilder + Markdown)
-- **Export-Stabilität:** Sichere Title-Extraktion in allen Export-Formaten
-
-#### 🔧 Technische Verbesserungen:
-- TypeScript Strict Mode vollständig erfüllt
-- Verbesserte Race Condition Prevention im Drag & Drop Handler
-- Cleanup von Event-Listenern zur Vermeidung von Memory Leaks
-- Robusteres Error Handling mit benutzerfreundlichen Fehlermeldungen
+#### 🎉 Neue Features:
+- ✨ **Swimlane-Ansicht:** Gruppiere Events in vertikale Bahnen mit `group: Name`.
+- ✨ **Scroll-Animationen:** Events blenden elegant beim Scrollen ein.
+- ✨ **TypeScript Migration:** Codebase modernisiert für mehr Stabilität.
+- 🛤️ **Grid Layout:** Modernes CSS Grid System für Swimlanes.
 
 ---
 
@@ -235,7 +228,7 @@ Bilder werden als `![alt](images/filename.png)` im Markdown referenziert für ma
 - **APIs:** LocalStorage, IndexedDB, File System Access API (optional)
 
 ### Verwendete Technologien
-- **Frontend:** Vanilla JavaScript (kein Framework)
+- **Frontend:** TypeScript, Vite
 - **Markdown:** Marked.js
 - **Bildverarbeitung:** FileReader API, IndexedDB
 - **Export:** html2canvas, jsPDF
@@ -281,4 +274,4 @@ Für weitere Hilfe: Debug-Button 🔍 ausführen und Ausgabe prüfen.
 
 ---
 
-**Timeline Visualizer v1.1** | Made with ❤️ | 100% Client-Side | Open Source
+**Timeline Visualizer v2.0** | Made with ❤️ | 100% Client-Side | Open Source

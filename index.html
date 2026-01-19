@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="dark">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timeline Visualizer v2.0 - TypeScript Edition</title>
+  <title>Timeline Visualizer v3.0 - Redesign Edition</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,156 +18,258 @@
   <script type="module" src="/src/main.ts"></script>
 </head>
 
-<body>
-  <div class="app-container">
-    <!-- Input Panel -->
-    <div class="input-panel">
-      <div class="header-controls">
-        <div class="header-buttons">
-          <button class="templates-toggle" id="templatesToggle" title="Templates">📄</button>
-          <button class="stats-toggle" id="statsToggle" title="Statistiken">📊</button>
-          <button class="view-toggle" id="viewToggle" title="Ansicht wechseln">🛤️</button>
-          <button class="theme-toggle" id="themeToggle" title="Theme wechseln">🌙</button>
-          <button class="help-toggle" id="helpToggle" title="Hilfe & Info">❓</button>
-          <button class="help-toggle" id="debugToggle" title="Debug Test">🪲</button>
-        </div>
-        <h1>Timeline Editor</h1>
-        <div style="width: 130px"></div>
+<body class="bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 font-sans h-screen flex overflow-hidden transition-colors duration-200">
+
+  <!-- Input Panel (Editor) -->
+  <aside class="w-full md:w-5/12 flex flex-col border-r border-border-light dark:border-border-dark bg-white dark:bg-surface-dark relative z-10 shadow-xl" role="complementary" aria-label="Editor Panel">
+
+    <!-- Header Toolbar -->
+    <header class="h-16 px-3 md:px-6 flex items-center justify-between border-b border-border-light dark:border-border-dark bg-gray-50 dark:bg-zinc-900" role="banner">
+      <nav class="flex items-center space-x-1 md:space-x-2" role="navigation" aria-label="Hauptnavigation">
+        <button class="p-2 rounded-lg text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" id="templatesToggle" title="Templates" aria-label="Templates öffnen">
+          <span class="material-icons-round text-xl" aria-hidden="true">note_add</span>
+        </button>
+        <button class="p-2 rounded-lg text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" id="saveMarkdownBtn" title="Speichern" aria-label="Timeline speichern">
+          <span class="material-icons-round text-xl" aria-hidden="true">save</span>
+        </button>
+        <button class="p-2 rounded-lg text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500" id="themeToggle" title="Theme wechseln" aria-label="Theme wechseln">
+          <span class="material-icons-round text-xl" aria-hidden="true">light_mode</span>
+        </button>
+        <button class="p-2 rounded-lg text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" id="helpToggle" title="Hilfe" aria-label="Hilfe öffnen">
+          <span class="material-icons-round text-xl" aria-hidden="true">help_outline</span>
+        </button>
+        <button class="p-2 rounded-lg text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" id="statsToggle" title="Statistiken" aria-label="Statistiken anzeigen">
+          <span class="material-icons-round text-xl" aria-hidden="true">bar_chart</span>
+        </button>
+        <button class="p-2 rounded-lg text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" id="viewToggle" title="Ansicht wechseln" aria-label="Ansicht wechseln">
+          <span class="material-icons-round text-xl" aria-hidden="true">view_column</span>
+        </button>
+        <button class="p-2 rounded-lg text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 hidden md:block" id="debugToggle" title="Debug" aria-label="Debug-Informationen">
+          <span class="material-icons-round text-xl" aria-hidden="true">bug_report</span>
+        </button>
+      </nav>
+      <h1 class="text-sm md:text-lg font-bold text-primary dark:text-blue-400">Timeline Editor</h1>
+    </header>
+
+    <!-- Editor Area -->
+    <div class="flex-1 relative bg-gray-50 dark:bg-[#1e1e1e] font-mono text-sm overflow-hidden flex flex-col">
+      <!-- Line Numbers (will be generated dynamically) -->
+      <div id="lineNumbers" class="absolute top-0 bottom-0 left-0 w-12 bg-gray-100 dark:bg-[#1e1e1e] border-r border-border-light dark:border-zinc-700 flex flex-col items-end pt-4 pr-2 text-gray-400 text-xs select-none overflow-hidden z-10">
       </div>
 
-      <label for="markdownInput">Ereignisse eingeben:</label>
-      <div class="textarea-container">
-        <textarea id="markdownInput" placeholder="Beispiel:
-date: 2023-01-15 10:00:00
-## Projektstart
-- Kick-off Meeting
+      <!-- Textarea Container with Syntax Highlighting Overlay -->
+      <div class="textarea-container flex-1 overflow-hidden relative">
+        <!-- Syntax Highlighting Overlay (behind textarea) -->
+        <pre
+          id="highlightOverlay"
+          class="absolute inset-0 p-4 pl-16 m-0 font-mono text-sm leading-6 whitespace-pre-wrap break-words overflow-hidden pointer-events-none text-gray-800 dark:text-gray-200"
+          aria-hidden="true"
+        ><code id="highlightContent"></code></pre>
+
+        <!-- Actual Textarea (transparent text, visible caret) -->
+        <textarea
+          id="markdownInput"
+          class="absolute inset-0 w-full h-full p-4 pl-16 bg-transparent border-none outline-none resize-none font-mono text-sm leading-6 custom-scrollbar text-transparent caret-gray-800 dark:caret-gray-200 selection:bg-blue-500/30 focus:ring-2 focus:ring-primary focus:ring-inset"
+          spellcheck="false"
+          aria-label="Timeline Markdown Editor"
+          aria-describedby="keyboardHints"
+          placeholder="date: 2025-01-15
+class: meeting
+## Projekt Kick-off
+- Ziele definieren
+- Team zusammenstellen
 
 ---
-date: 2023-01-20 14:30:00
-Erster Meilenstein erreicht
-> Super Fortschritt!"></textarea>
-        <div class="autosave-indicator" id="autosaveIndicator">Gespeichert</div>
-      </div>
+date: 2025-01-15
+end_date: 2025-03-31
+class: work
+## Phase 1: Planung & Design
+Detaillierte Konzeptionsphase"></textarea>
 
-      <div class="search-filter-container">
-        <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Suche in Timeline... (Strg+F)" />
-          <button class="search-clear" id="searchClear">×</button>
+        <div id="autosaveIndicator" class="absolute top-4 right-4 text-xs text-emerald-500 font-medium bg-emerald-500/10 px-2 py-1 rounded opacity-0 transition-opacity z-20">
+          Gespeichert
         </div>
-        <div class="filter-dropdown">
-          <button class="filter-button" id="filterButton">
-            <span>Filter</span>
-            <span id="filterCount"></span>
-          </button>
-          <div class="filter-menu" id="filterMenu">
-            <div class="filter-option">
-              <input type="checkbox" id="filter-critical" value="critical" checked />
-              <label for="filter-critical">Critical</label>
-            </div>
-            <div class="filter-option">
-              <input type="checkbox" id="filter-warning" value="warning" checked />
-              <label for="filter-warning">Warning</label>
-            </div>
-            <div class="filter-option">
-              <input type="checkbox" id="filter-success" value="success" checked />
-              <label for="filter-success">Success</label>
-            </div>
-            <div class="filter-option">
-              <input type="checkbox" id="filter-meeting" value="meeting" checked />
-              <label for="filter-meeting">Meeting</label>
-            </div>
-            <div class="filter-option">
-              <input type="checkbox" id="filter-work" value="work" checked />
-              <label for="filter-work">Work</label>
-            </div>
-            <div class="filter-option">
-              <input type="checkbox" id="filter-none" value="none" checked />
-              <label for="filter-none">Ohne Kategorie</label>
-            </div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="p-3 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark flex gap-2" role="search">
+      <div class="relative flex-1">
+        <span class="material-icons-round absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true">search</span>
+        <input
+          type="search"
+          id="searchInput"
+          class="w-full bg-gray-100 dark:bg-zinc-800 border-none rounded-md py-1.5 pl-8 pr-8 text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary placeholder-gray-500"
+          placeholder="Suche in Timeline... (Strg+F)"
+          aria-label="Timeline durchsuchen"
+        />
+        <button id="searchClear" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden focus:outline-none focus:ring-2 focus:ring-primary rounded" aria-label="Suche löschen">
+          <span class="material-icons-round text-sm" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="filter-dropdown relative">
+        <button id="filterButton" class="bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Filter öffnen" aria-expanded="false" aria-haspopup="true">
+          <span class="material-icons-round text-sm" aria-hidden="true">filter_list</span>
+          <span class="hidden sm:inline">Filter</span>
+          <span id="filterCount" class="hidden bg-primary text-white text-xs rounded-full px-1.5" aria-live="polite"></span>
+        </button>
+        <div id="filterMenu" class="filter-menu hidden absolute top-full right-0 mt-2 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg p-2 z-50 min-w-[180px]">
+          <div class="filter-option flex items-center p-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded cursor-pointer">
+            <input type="checkbox" id="filter-critical" value="critical" checked class="mr-2" />
+            <label for="filter-critical" class="text-sm cursor-pointer flex-1 text-danger">Critical</label>
+          </div>
+          <div class="filter-option flex items-center p-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded cursor-pointer">
+            <input type="checkbox" id="filter-warning" value="warning" checked class="mr-2" />
+            <label for="filter-warning" class="text-sm cursor-pointer flex-1 text-warning">Warning</label>
+          </div>
+          <div class="filter-option flex items-center p-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded cursor-pointer">
+            <input type="checkbox" id="filter-success" value="success" checked class="mr-2" />
+            <label for="filter-success" class="text-sm cursor-pointer flex-1 text-success">Success</label>
+          </div>
+          <div class="filter-option flex items-center p-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded cursor-pointer">
+            <input type="checkbox" id="filter-meeting" value="meeting" checked class="mr-2" />
+            <label for="filter-meeting" class="text-sm cursor-pointer flex-1 text-purple">Meeting</label>
+          </div>
+          <div class="filter-option flex items-center p-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded cursor-pointer">
+            <input type="checkbox" id="filter-work" value="work" checked class="mr-2" />
+            <label for="filter-work" class="text-sm cursor-pointer flex-1 text-primary">Work</label>
+          </div>
+          <div class="filter-option flex items-center p-2 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded cursor-pointer">
+            <input type="checkbox" id="filter-none" value="none" checked class="mr-2" />
+            <label for="filter-none" class="text-sm cursor-pointer flex-1 text-gray-500">Ohne Kategorie</label>
           </div>
         </div>
       </div>
-
-      <button id="visualizeBtn">Präsentation öffnen</button>
-      <div class="keyboard-hint">
-        Strg+Enter: Präsentation | Strg+S: Speichern | Strg+F: Suche | Strg+V: Screenshot einfügen
-      </div>
-
-      <div class="save-options">
-        <button id="loadMarkdownBtn">Markdown laden</button>
-        <button id="saveMarkdownBtn">Markdown speichern</button>
-        <button id="saveHtmlBtn">HTML speichern</button>
-        <button id="savePngBtn">PNG speichern</button>
-        <button id="savePdfBtn">PDF speichern</button>
-      </div>
-      <input id="loadMarkdownInput" type="file" accept=".md,text/markdown" style="display: none" />
     </div>
 
-    <!-- Output Panel -->
-    <div class="output-panel" id="outputPanel">
-      <div id="timelineOutput" class="timeline">
-        <p class="info-message">
-          Die Visualisierung deiner Ereignisse erscheint hier. Gib links Daten ein und klicke auf 'Visualisieren'.
-        </p>
+    <!-- Action Buttons -->
+    <div class="p-4 border-t border-border-light dark:border-border-dark bg-gray-50 dark:bg-zinc-900">
+      <button id="visualizeBtn" class="w-full bg-primary hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-glow transition-all mb-2 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="Präsentation öffnen">
+        <span class="material-icons-round" aria-hidden="true">play_arrow</span>
+        <span>Präsentation öffnen</span>
+      </button>
+      <p id="keyboardHints" class="text-center text-[10px] text-gray-400 mb-4 italic">
+        Strg+Enter: Präsentation | Strg+S: Speichern | Strg+F: Suche
+      </p>
+
+      <!-- Export Grid -->
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <button id="loadMarkdownBtn" class="bg-white dark:bg-surface-dark border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 py-2 px-3 rounded text-xs font-medium transition-colors flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Markdown-Datei laden">
+          <span class="material-icons-round text-sm" aria-hidden="true">upload_file</span>
+          <span class="hidden sm:inline">Markdown laden</span>
+        </button>
+        <button id="saveMarkdownBtnAlt" class="bg-white dark:bg-surface-dark border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 py-2 px-3 rounded text-xs font-medium transition-colors flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Als Markdown speichern">
+          <span class="material-icons-round text-sm" aria-hidden="true">download</span>
+          <span class="hidden sm:inline">Markdown</span>
+        </button>
       </div>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <button id="saveHtmlBtn" class="bg-white dark:bg-surface-dark border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 py-2 px-3 rounded text-xs font-medium transition-colors flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Als HTML speichern">
+          <span class="material-icons-round text-sm" aria-hidden="true">code</span>
+          <span class="hidden sm:inline">HTML</span>
+        </button>
+        <button id="savePngBtn" class="bg-white dark:bg-surface-dark border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 py-2 px-3 rounded text-xs font-medium transition-colors flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Als PNG speichern">
+          <span class="material-icons-round text-sm" aria-hidden="true">image</span>
+          <span class="hidden sm:inline">PNG</span>
+        </button>
+      </div>
+      <button id="savePdfBtn" class="w-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 py-2 px-3 rounded text-xs font-medium transition-colors flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Als PDF speichern">
+        <span class="material-icons-round text-sm" aria-hidden="true">picture_as_pdf</span>
+        <span>PDF speichern</span>
+      </button>
     </div>
-  </div>
+
+    <!-- Hidden File Input -->
+    <input id="loadMarkdownInput" type="file" accept=".md,text/markdown" class="hidden" />
+  </aside>
+
+  <!-- Output Panel (Timeline) -->
+  <main id="outputPanel" class="flex-1 bg-gray-100 dark:bg-background-dark overflow-auto custom-scrollbar p-4 md:p-10 relative" role="main" aria-label="Timeline Visualisierung">
+    <div id="timelineOutput" class="timeline max-w-4xl mx-auto relative pb-20 pl-4" aria-live="polite" aria-atomic="false">
+      <p class="text-center text-gray-500 dark:text-gray-400 py-20">
+        Die Visualisierung deiner Ereignisse erscheint hier.<br>
+        Gib links Daten ein und klicke auf 'Präsentation öffnen'.
+      </p>
+    </div>
+  </main>
 
   <!-- Statistics Modal -->
-  <div id="statsModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Timeline Statistiken</h2>
-        <button class="modal-close" id="statsModalClose">×</button>
+  <div id="statsModal" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="statsModalTitle">
+    <div class="modal-content bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto">
+      <div class="modal-header flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
+        <h2 id="statsModalTitle" class="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <span class="material-icons-round text-primary" aria-hidden="true">bar_chart</span>
+          Timeline Statistiken
+        </h2>
+        <button id="statsModalClose" class="p-1 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Statistiken schließen">
+          <span class="material-icons-round" aria-hidden="true">close</span>
+        </button>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="totalEvents">0</div>
-          <div class="stat-label">Gesamt Ereignisse</div>
+      <div class="p-4">
+        <div class="stats-grid grid grid-cols-2 gap-4 mb-6">
+          <div class="stat-card bg-gray-50 dark:bg-zinc-800 rounded-lg p-4 text-center">
+            <div id="totalEvents" class="stat-value text-3xl font-bold text-primary">0</div>
+            <div class="stat-label text-sm text-gray-500">Gesamt Ereignisse</div>
+          </div>
+          <div class="stat-card bg-gray-50 dark:bg-zinc-800 rounded-lg p-4 text-center">
+            <div id="upcomingEvents" class="stat-value text-3xl font-bold text-success">0</div>
+            <div class="stat-label text-sm text-gray-500">Zukünftige</div>
+          </div>
+          <div class="stat-card bg-gray-50 dark:bg-zinc-800 rounded-lg p-4 text-center">
+            <div id="pastEvents" class="stat-value text-3xl font-bold text-gray-400">0</div>
+            <div class="stat-label text-sm text-gray-500">Vergangene</div>
+          </div>
+          <div class="stat-card bg-gray-50 dark:bg-zinc-800 rounded-lg p-4 text-center">
+            <div id="durationEvents" class="stat-value text-3xl font-bold text-purple">0</div>
+            <div class="stat-label text-sm text-gray-500">Dauer-Events</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="upcomingEvents">0</div>
-          <div class="stat-label">Zukünftige Ereignisse</div>
+        <div class="class-distribution">
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Verteilung nach Kategorie</h3>
+          <div id="classDistribution" class="space-y-2"></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="pastEvents">0</div>
-          <div class="stat-label">Vergangene Ereignisse</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="durationEvents">0</div>
-          <div class="stat-label">Dauer-Ereignisse</div>
-        </div>
-      </div>
-      <div class="class-distribution">
-        <h3>Verteilung nach Kategorie</h3>
-        <div id="classDistribution"></div>
       </div>
     </div>
   </div>
 
   <!-- Templates Modal -->
-  <div id="templatesModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Timeline Templates</h2>
-        <button class="modal-close" id="templatesModalClose">×</button>
+  <div id="templatesModal" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="templatesModalTitle">
+    <div class="modal-content bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
+      <div class="modal-header flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
+        <h2 id="templatesModalTitle" class="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <span class="material-icons-round text-primary" aria-hidden="true">note_add</span>
+          Timeline Templates
+        </h2>
+        <button id="templatesModalClose" class="p-1 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Templates schließen">
+          <span class="material-icons-round" aria-hidden="true">close</span>
+        </button>
       </div>
-      <div class="template-grid" id="templateGrid"></div>
+      <div id="templateGrid" class="p-4 grid grid-cols-2 gap-4"></div>
     </div>
   </div>
 
   <!-- Help Modal -->
-  <div id="helpModal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
-        <h2>❓ Hilfe & Informationen</h2>
-        <button class="modal-close" id="helpModalClose">×</button>
+  <div id="helpModal" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="modal-content bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-3xl w-full mx-4 max-h-[85vh] overflow-auto">
+      <div class="modal-header flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark sticky top-0 bg-white dark:bg-surface-dark z-10">
+        <h2 id="helpModalTitle" class="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <span class="material-icons-round text-primary" aria-hidden="true">help_outline</span>
+          Hilfe & Informationen
+        </h2>
+        <button id="helpModalClose" class="p-1 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Hilfe schließen">
+          <span class="material-icons-round" aria-hidden="true">close</span>
+        </button>
       </div>
-      <div class="help-content">
+      <div class="help-content p-6 space-y-6">
+
+        <!-- Markdown Syntax -->
         <div class="help-section">
-          <h3>📝 Markdown-Syntax</h3>
-          <p>Ereignisse werden durch <code>---</code> getrennt und folgen diesem Format:</p>
-          <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">date: 2025-01-15 14:30:00
+          <h3 class="text-base font-semibold text-primary mb-3 flex items-center gap-2">
+            <span class="material-icons-round text-sm">code</span>
+            Markdown-Syntax
+          </h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Ereignisse werden durch <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">---</code> getrennt:</p>
+          <pre class="bg-gray-100 dark:bg-zinc-800 p-3 rounded-lg text-xs overflow-x-auto font-mono">date: 2025-01-15 14:30:00
 end_date: 2025-01-20 (optional)
 class: warning (optional)
 ## Titel (optional)
@@ -180,169 +282,88 @@ Inhalt in Markdown-Format
 Nächstes Ereignis...</pre>
         </div>
 
+        <!-- Date Formats -->
         <div class="help-section">
-          <h3>📅 Datumsformate</h3>
-          <ul>
-            <li><strong>ISO:</strong> <code>2025-01-15</code> oder <code>2025-01-15 14:30:00</code></li>
-            <li><strong>Deutsch:</strong> <code>15.01.2025</code> oder <code>15.01.2025 14:30</code></li>
-            <li><strong>Quartale:</strong> <code>Q1 2025</code> oder <code>2025 Q1</code></li>
-            <li><strong>Monate:</strong> <code>Januar 2025</code> oder <code>2025 Januar</code></li>
+          <h3 class="text-base font-semibold text-primary mb-3 flex items-center gap-2">
+            <span class="material-icons-round text-sm">event</span>
+            Datumsformate
+          </h3>
+          <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <li><strong>ISO:</strong> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">2025-01-15</code> oder <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">2025-01-15 14:30:00</code></li>
+            <li><strong>Deutsch:</strong> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">15.01.2025</code> oder <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">15.01.2025 14:30</code></li>
+            <li><strong>Quartale:</strong> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">Q1 2025</code> oder <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">2025 Q1</code></li>
+            <li><strong>Monate:</strong> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">Januar 2025</code> oder <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">2025 Januar</code></li>
           </ul>
         </div>
 
+        <!-- Event Categories -->
         <div class="help-section">
-          <h3>🎨 Event-Kategorien</h3>
-          <ul>
-            <li><code>class: critical</code> - Kritische Ereignisse (rot)</li>
-            <li><code>class: warning</code> - Warnungen (orange)</li>
-            <li><code>class: success</code> - Erfolge (grün)</li>
-            <li><code>class: meeting</code> - Meetings (lila)</li>
-            <li><code>class: work</code> - Arbeit (blau)</li>
-          </ul>
+          <h3 class="text-base font-semibold text-primary mb-3 flex items-center gap-2">
+            <span class="material-icons-round text-sm">palette</span>
+            Event-Kategorien
+          </h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-danger"></span> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">critical</code> - Kritisch</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-warning"></span> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">warning</code> - Warnung</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-success"></span> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">success</code> - Erfolg</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple"></span> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">meeting</code> - Meeting</div>
+            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-primary"></span> <code class="bg-gray-100 dark:bg-zinc-800 px-1 rounded">work</code> - Arbeit</div>
+          </div>
         </div>
 
+        <!-- Keyboard Shortcuts -->
         <div class="help-section">
-          <h3>🖼️ Bilder einfügen (NEU in v1.1)</h3>
-          <ul>
-            <li><strong>Drag & Drop:</strong> Ziehe Bilder direkt ins Textfeld</li>
-            <li><strong>Screenshot:</strong> Drücke <kbd>Strg+V</kbd> im Textfeld</li>
-            <li><strong>Syntax:</strong> <code>![Beschreibung](images/bild.png)</code></li>
-            <li><strong>Speicherung:</strong> Bilder werden in IndexedDB gespeichert</li>
-            <li><strong>Export:</strong> HTML enthält eingebettete Base64-Bilder</li>
-          </ul>
+          <h3 class="text-base font-semibold text-primary mb-3 flex items-center gap-2">
+            <span class="material-icons-round text-sm">keyboard</span>
+            Tastenkombinationen
+          </h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div><kbd class="bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 rounded text-xs">Strg+Enter</kbd> Präsentation</div>
+            <div><kbd class="bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 rounded text-xs">Strg+S</kbd> Speichern</div>
+            <div><kbd class="bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 rounded text-xs">Strg+F</kbd> Suche</div>
+            <div><kbd class="bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 rounded text-xs">Strg+V</kbd> Screenshot</div>
+            <div><kbd class="bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 rounded text-xs">Strg+Z</kbd> Rückgängig</div>
+            <div><kbd class="bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 rounded text-xs">ESC</kbd> Schließen</div>
+          </div>
         </div>
 
-        <div class="help-section">
-          <h3>⌨️ Tastenkombinationen</h3>
-          <ul>
-            <li><kbd>Strg+Enter</kbd> - Präsentation öffnen/schließen</li>
-            <li><kbd>Strg+S</kbd> - Markdown speichern</li>
-            <li><kbd>Strg+F</kbd> - Suche fokussieren</li>
-            <li><kbd>Strg+V</kbd> - Screenshot einfügen</li>
-            <li><kbd>Strg+Z</kbd> - Rückgängig</li>
-            <li><kbd>Strg+Y</kbd> - Wiederherstellen</li>
-            <li><kbd>ESC</kbd> - Präsentation/Modals schließen</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>💾 Export-Optionen</h3>
-          <ul>
-            <li><strong>Markdown:</strong> Mit oder ohne Bilder-Ordner (File System Access API)</li>
-            <li><strong>HTML:</strong> Standalone-Datei mit eingebetteten Bildern (Base64)</li>
-            <li><strong>PNG:</strong> Timeline als Bild exportieren</li>
-            <li><strong>PDF:</strong> Timeline als PDF-Dokument</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h3>🎬 Präsentationsmodus</h3>
-          <p>Öffnet ein separates Fenster (1920×1080) für Präsentationen. Änderungen werden live synchronisiert. Filter
-            und Suche werden ebenfalls übertragen.</p>
-        </div>
-
-        <div class="help-section">
-          <h3>💡 Tipps</h3>
-          <ul>
-            <li>Verwende <code>end_date</code> für Dauer-Events mit visuellen Verbindungslinien</li>
-            <li>Klicke auf das Datum eines Events um zur Markdown-Quelle zu springen</li>
-            <li>Nutze Filter um Events nach Kategorie ein-/auszublenden</li>
-            <li>Alle Daten werden lokal im Browser gespeichert (LocalStorage + IndexedDB)</li>
-            <li>Templates bieten Startpunkte für verschiedene Anwendungsfälle</li>
-          </ul>
-        </div>
-
-                  <div class="help-section changelog">
-                  <h3>📋 Changelog</h3>
-
-                  <div class="version-block">
-                    <h4>Version 2.0.1 - Bugfixes & Code-Qualität (Dezember 2024)</h4>
-                    <ul>
-                      <li>🐛 <strong>EventType-Konsistenz:</strong> Entfernung des unbenutzten info Event-Types</li>
-                      <li>🔧 <strong>Dependency Injection:</strong> Saubere Architektur für Images-Service</li>
-                      <li>🛡️ <strong>Error Handling:</strong> Robuste Fehlerbehandlung bei Initialisierung</li>
-                      <li>✅ <strong>Null-Safety:</strong> Verbesserte Null-Checks in Parser und Export-Modul</li>
-                      <li>🔒 <strong>Memory Leak Fix:</strong> Präsentationsfenster wird automatisch geschlossen</li>
-                      <li>📁 <strong>Drag & Drop:</strong> Besseres Handling von gemischten Datei-Typen</li>
-                      <li>📤 <strong>Export-Stabilität:</strong> Sichere Title-Extraktion in allen Export-Formaten</li>
-                    </ul>
-                    <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 10px;">
-                      <em>TypeScript Strict Mode vollständig erfüllt. Verbesserte Race Condition Prevention.</em>
-                    </p>
-                  </div>
-
-                  <div class="version-block">
-                    <h4>Version 1.2 - Filter Export & Bugfixes (November 2025)</h4>
-                    <ul>
-                      <li>✨ <strong>Export-Filter:</strong> Alle Exporte (HTML, MD, PNG, PDF) berücksichtigen nun die aktiven Filter.</li>
-                      <li>🐛 <strong>Bugfix:</strong> Ein Timing-Fehler wurde behoben, der verhinderte, dass Filter korrekt auf Exporte angewendet wurden.</li>
-                    </ul>
-                  </div>
-        
-                  <div class="version-block">
-                    <h4>Version 1.1 - Bild-Support (Januar 2025)</h4>
-                    <ul>
-                      <li>✨ <strong>Bilder per Drag & Drop einfügen:</strong> Ziehe Bilder direkt ins Textfeld</li>
-                      <li>✨ <strong>Screenshot-Paste:</strong> Strg+V fügt Screenshots direkt ein</li>
-                      <li>💾 <strong>IndexedDB-Speicherung:</strong> Bilder werden lokal gespeichert</li>
-                      <li>📤 <strong>HTML-Export mit Bildern:</strong> Base64-eingebettet für Standalone-Dateien</li>
-                      <li>📤 <strong>Markdown-Export mit images/:</strong> Ordnerstruktur mit File System Access API</li>
-                      <li>🎨 <strong>Bilder in Präsentation:</strong> Werden automatisch angezeigt</li>
-                      <li>🌓 <strong>Theme-Support:</strong> Hell/Dunkel-Modus auch im HTML-Export</li>
-                      <li>🐛 <strong>Bugfixes:</strong> DOM-Rendering optimiert, Konsolenfehler behoben</li>
-                    </ul>
-                    <p style="font-size: 0.9em; color: var(--secondary-color); margin-top: 10px;">
-                      <em>Bilder werden als <code>![alt](images/filename.png)</code> referenziert für Git-Kompatibilität.</em>
-                    </p>
-                  </div>
-        
-                  <div class="version-block">
-                    <h4>Version 1.0 - Initial Release</h4>
-                    <ul>
-                      <li>📝 Markdown-basierte Timeline-Erstellung</li>
-                      <li>🎨 Flexible Event-Kategorien mit Farbcodierung</li>
-                      <li>📅 Multiple Datumsformate (ISO, Deutsch, Quartale, Monate)</li>
-                      <li>⏱️ Dauer-Events mit visuellen Verbindungen</li>
-                      <li>🔍 Live-Suche mit Highlighting</li>
-                      <li>🎯 Filter nach Kategorien</li>
-                      <li>📊 Statistik-Dashboard</li>
-                      <li>📋 Vorgefertigte Templates</li>
-                      <li>💾 Auto-Save mit LocalStorage</li>
-                      <li>⏮️ Undo/Redo-Funktion</li>
-                      <li>🌓 Hell/Dunkel-Theme</li>
-                      <li>🎬 Präsentationsmodus (1920×1080)</li>
-                      <li>📤 Export: Markdown, HTML, PNG, PDF</li>
-                    </ul>
-                  </div>
-                </div>
-        <div class="help-section"
-          style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary-color);">
-          <h3>ℹ️ Über Timeline Visualizer</h3>
-          <p><strong>Version:</strong> 2.0.1</p>
-          <p><strong>Technologie:</strong> TypeScript, Vite, Marked.js, IndexedDB</p>
-          <p><strong>Browser-Anforderungen:</strong> Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</p>
-          <p><strong>Datenschutz:</strong> Alle Daten werden nur lokal im Browser gespeichert. Keine
-            Server-Kommunikation.</p>
+        <!-- About -->
+        <div class="help-section bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-primary">
+          <h3 class="text-base font-semibold text-primary mb-2 flex items-center gap-2">
+            <span class="material-icons-round text-sm">info</span>
+            Über Timeline Visualizer
+          </h3>
+          <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <p><strong>Version:</strong> 3.0.0 (Redesign Edition)</p>
+            <p><strong>Technologie:</strong> TypeScript, Vite, Tailwind CSS, Marked.js</p>
+            <p><strong>Datenschutz:</strong> Alle Daten werden nur lokal gespeichert.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Debug Modal -->
-  <div id="debugModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>🔍 Debug Informationen</h2>
-        <button class="modal-close" id="debugModalClose">×</button>
+  <div id="debugModal" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="modal-content bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-lg w-full mx-4">
+      <div class="modal-header flex items-center justify-between p-4 border-b border-border-light dark:border-border-dark">
+        <h2 class="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <span class="material-icons-round text-green-500">bug_report</span>
+          Debug Informationen
+        </h2>
+        <button id="debugModalClose" class="p-1 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+          <span class="material-icons-round">close</span>
+        </button>
       </div>
-      <div id="debugOutput"
-        style="font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; background: #f5f5f5; padding: 15px; border-radius: 5px;">
-        <p>Teste...</p>
+      <div class="p-4">
+        <div id="debugOutput" class="font-mono text-xs max-h-64 overflow-y-auto bg-gray-100 dark:bg-zinc-800 p-3 rounded-lg mb-4">
+          <p class="text-gray-500">Teste...</p>
+        </div>
+        <button id="testDropZone" class="w-full p-8 border-2 border-dashed border-primary rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-pointer text-center">
+          <span class="material-icons-round text-4xl text-primary mb-2">upload_file</span>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Bild hierher ziehen zum Testen</p>
+        </button>
       </div>
-      <button id="testDropZone"
-        style="margin-top: 15px; width: 100%; padding: 40px; border: 3px dashed #007bff; background: #363636; border-radius: 8px; cursor: pointer;">
-        📎 Bild hierher ziehen zum Testen
-      </button>
     </div>
   </div>
 
@@ -351,309 +372,100 @@ Nächstes Ereignis...</pre>
     // Debug functionality
     async function runDebugTests() {
       const output = document.getElementById('debugOutput');
+      if (!output) return;
       let html = '';
 
       function log(msg, isError = false) {
-        const color = isError ? 'red' : 'green';
-        html += `<div style="color: ${color}; margin: 5px 0;">${isError ? '❌' : '✅'} ${msg}</div>`;
+        const color = isError ? 'text-red-500' : 'text-green-500';
+        html += `<div class="${color} mb-1">${isError ? '❌' : '✅'} ${msg}</div>`;
         output.innerHTML = html;
-        console.log(msg);
       }
 
       try {
-        log(`<strong>Browser:</strong> ${navigator.userAgent}`);
-        log(`<strong>URL:</strong> ${window.location.href}`);
-        log(`<strong>Origin:</strong> ${window.location.origin}`);
+        log(`<strong>Browser:</strong> ${navigator.userAgent.slice(0, 50)}...`);
         log(`<strong>Protocol:</strong> ${window.location.protocol}`);
 
         if (!window.indexedDB) {
-          log('IndexedDB wird nicht unterstützt!', true);
+          log('IndexedDB nicht verfügbar!', true);
           return;
         }
-        log('IndexedDB wird unterstützt');
+        log('IndexedDB verfügbar');
 
         try {
           localStorage.setItem('test', 'test');
           localStorage.removeItem('test');
           log('LocalStorage funktioniert');
         } catch (e) {
-          log('LocalStorage blockiert: ' + e.message, true);
+          log('LocalStorage blockiert', true);
         }
 
-        if (!window.TimelineApp || !window.TimelineApp.Images) {
-          log('TimelineApp.Images nicht geladen!', true);
-          return;
-        }
-        log('TimelineApp.Images ist geladen');
-
-        try {
-          await TimelineApp.Images.init();
-          log('IndexedDB erfolgreich initialisiert');
-
-          if (TimelineApp.Images.db) {
-            log(`Database Name: ${TimelineApp.Images.db.name}`);
-            log(`Database Version: ${TimelineApp.Images.db.version}`);
+        if (window.TimelineApp?.Images) {
+          log('TimelineApp.Images geladen');
+          try {
+            await window.TimelineApp.Images.init();
+            log('IndexedDB initialisiert');
+          } catch (e) {
+            log('IndexedDB Init fehlgeschlagen: ' + e.message, true);
           }
-        } catch (e) {
-          log('IndexedDB Initialisierung fehlgeschlagen: ' + e.message, true);
-          return;
-        }
-
-        try {
-          const testBlob = new Blob(['test'], { type: 'image/png' });
-          const testName = 'test_' + Date.now() + '.png';
-          await TimelineApp.Images.storeImage(testName, testBlob);
-          log('Test-Bild erfolgreich gespeichert');
-
-          const retrieved = await TimelineApp.Images.getImage(testName);
-          if (retrieved) {
-            log('Test-Bild erfolgreich abgerufen');
-            await TimelineApp.Images.deleteImage(testName);
-            log('Test-Bild erfolgreich gelöscht');
-          } else {
-            log('Test-Bild konnte nicht abgerufen werden', true);
-          }
-        } catch (e) {
-          log('Fehler beim Test-Bild: ' + e.message, true);
-        }
-
-        if ('FileReader' in window) {
-          log('FileReader API verfügbar');
         } else {
-          log('FileReader API nicht verfügbar', true);
+          log('TimelineApp.Images nicht verfügbar', true);
         }
 
-        if (navigator.clipboard) {
-          log('Clipboard API verfügbar');
-        } else {
-          log('Clipboard API eingeschränkt (benötigt HTTPS)', true);
-        }
-
-        log('<strong>=== ALLE TESTS ABGESCHLOSSEN ===</strong>');
-
+        log('<strong>=== TESTS ABGESCHLOSSEN ===</strong>');
       } catch (e) {
-        log('Unerwarteter Fehler: ' + e.message, true);
-        console.error(e);
+        log('Fehler: ' + e.message, true);
       }
     }
 
-    // Setup help and debug modals
+    // Modal handlers
     document.addEventListener('DOMContentLoaded', () => {
-      // Help Modal
-      const helpToggle = document.getElementById('helpToggle');
-      const helpModal = document.getElementById('helpModal');
-      const helpModalClose = document.getElementById('helpModalClose');
+      const modals = ['help', 'debug', 'stats', 'templates'];
 
-      if (helpToggle) {
-        helpToggle.addEventListener('click', () => {
-          helpModal.classList.add('show');
-        });
-      }
+      modals.forEach(name => {
+        const toggle = document.getElementById(name + 'Toggle');
+        const modal = document.getElementById(name + 'Modal');
+        const close = document.getElementById(name + 'ModalClose');
 
-      if (helpModalClose) {
-        helpModalClose.addEventListener('click', () => {
-          helpModal.classList.remove('show');
-        });
-      }
+        if (toggle && modal) {
+          toggle.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            if (name === 'debug') runDebugTests();
+          });
+        }
 
-      if (helpModal) {
-        helpModal.addEventListener('click', (e) => {
-          if (e.target === helpModal) {
-            helpModal.classList.remove('show');
-          }
-        });
-      }
+        if (close && modal) {
+          close.addEventListener('click', () => modal.classList.add('hidden'));
+        }
 
-      // Debug Modal
-      const debugToggle = document.getElementById('debugToggle');
-      const debugModal = document.getElementById('debugModal');
-      const debugModalClose = document.getElementById('debugModalClose');
+        if (modal) {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+          });
+        }
+      });
+
+      // Test drop zone
       const testDropZone = document.getElementById('testDropZone');
-
-      if (debugToggle) {
-        debugToggle.addEventListener('click', () => {
-          debugModal.classList.add('show');
-          runDebugTests();
-        });
-      }
-
-      if (debugModalClose) {
-        debugModalClose.addEventListener('click', () => {
-          debugModal.classList.remove('show');
-        });
-      }
-
-      if (debugModal) {
-        debugModal.addEventListener('click', (e) => {
-          if (e.target === debugModal) {
-            debugModal.classList.remove('show');
-          }
-        });
-      }
-
       if (testDropZone) {
         testDropZone.addEventListener('dragover', (e) => {
           e.preventDefault();
-          testDropZone.style.background = '#cce5ff';
+          testDropZone.classList.add('bg-blue-200', 'dark:bg-blue-900/40');
         });
-
         testDropZone.addEventListener('dragleave', (e) => {
           e.preventDefault();
-          testDropZone.style.background = '#f0f8ff';
+          testDropZone.classList.remove('bg-blue-200', 'dark:bg-blue-900/40');
         });
-
         testDropZone.addEventListener('drop', async (e) => {
           e.preventDefault();
-          testDropZone.style.background = '#f0f8ff';
-
+          testDropZone.classList.remove('bg-blue-200', 'dark:bg-blue-900/40');
           const output = document.getElementById('debugOutput');
-          let html = output.innerHTML;
-
-          html += '<hr><strong>DROP TEST:</strong><br>';
-
-          if (e.dataTransfer && e.dataTransfer.files) {
-            html += `Anzahl Dateien: ${e.dataTransfer.files.length}<br>`;
-
-            for (let i = 0; i < e.dataTransfer.files.length; i++) {
-              const file = e.dataTransfer.files[i];
-              html += `Datei ${i + 1}: ${file.name} (${file.type}, ${file.size} bytes)<br>`;
-
-              if (file.type.startsWith('image/')) {
-                try {
-                  const filename = await TimelineApp.Images.handleImageFile(file);
-                  if (filename) {
-                    html += `<span style="color: green;">✅ Erfolgreich gespeichert als: ${filename}</span><br>`;
-                  } else {
-                    html += '<span style="color: red;">❌ Speichern fehlgeschlagen</span><br>';
-                  }
-                } catch (err) {
-                  html += `<span style="color: red;">❌ Fehler: ${err.message}</span><br>`;
-                }
-              }
-            }
-          } else {
-            html += '<span style="color: red;">Keine Dateien gefunden!</span><br>';
+          if (output && e.dataTransfer?.files) {
+            output.innerHTML += `<hr class="my-2"><strong>DROP:</strong> ${e.dataTransfer.files.length} Datei(en)<br>`;
           }
-
-          output.innerHTML = html;
-          output.scrollTop = output.scrollHeight;
         });
       }
     });
   </script>
-
-  <style>
-    /* Help Modal Specific Styles */
-    .help-content {
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-
-    .help-section {
-      margin-bottom: 25px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .help-section:last-child {
-      border-bottom: none;
-    }
-
-    .help-section h3 {
-      color: var(--primary-color);
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-
-    .help-section ul {
-      margin: 10px 0;
-      padding-left: 25px;
-    }
-
-    .help-section li {
-      margin: 8px 0;
-      line-height: 1.6;
-    }
-
-    .help-section code {
-      background-color: var(--hover-bg);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
-    }
-
-    .help-section kbd {
-      background-color: #f5f5f5;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-      padding: 2px 6px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85em;
-      white-space: nowrap;
-    }
-
-    [data-theme="dark"] .help-section kbd {
-      background-color: #3a3a3a;
-      border-color: #555;
-      color: #e0e0e0;
-    }
-
-    .help-section pre {
-      background: var(--hover-bg);
-      padding: 12px;
-      border-radius: 5px;
-      overflow-x: auto;
-      font-size: 0.9em;
-      line-height: 1.4;
-      color: var(--text-color);
-    }
-
-    [data-theme="dark"] .help-section pre {
-      background: #2a2a2a;
-      color: #e0e0e0;
-    }
-
-    .changelog .version-block {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: var(--hover-bg);
-      border-radius: 8px;
-      border-left: 4px solid var(--primary-color);
-    }
-
-    .changelog .version-block h4 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      color: var(--primary-color);
-    }
-
-    .changelog .version-block ul {
-      margin: 5px 0;
-    }
-
-    .help-toggle {
-      background: none;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1.2em;
-      transition: all 0.3s ease;
-    }
-
-    .help-toggle:hover {
-      background-color: var(--hover-bg);
-    }
-
-    .help-toggle.active {
-      background-color: var(--primary-color);
-      color: white;
-      border-color: var(--primary-color);
-    }
-  </style>
 </body>
 
 </html>

@@ -162,15 +162,43 @@ export class Storage {
   }
 
   /**
-   * Load theme preference
+   * Load theme preference (respects system preference if no user preference set)
    */
   loadTheme(): ThemeMode {
     try {
-      const theme = localStorage.getItem(STORAGE_KEYS.THEME);
-      return (theme as ThemeMode) || 'light';
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+
+      // If user has explicitly set a theme, use it
+      if (savedTheme) {
+        return savedTheme as ThemeMode;
+      }
+
+      // Otherwise, check system preference
+      return this.getSystemThemePreference();
     } catch (e) {
       console.error('Theme load failed:', e);
-      return 'light';
+      return this.getSystemThemePreference();
+    }
+  }
+
+  /**
+   * Get system theme preference (prefers-color-scheme)
+   */
+  getSystemThemePreference(): ThemeMode {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  }
+
+  /**
+   * Check if user has explicitly set a theme preference
+   */
+  hasThemePreference(): boolean {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.THEME) !== null;
+    } catch (e) {
+      return false;
     }
   }
 

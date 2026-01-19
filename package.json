@@ -1,7 +1,7 @@
 {
   "name": "timeline-visualizer",
-  "version": "2.0.1",
-  "description": "Modern TypeScript Timeline Visualizer - Interactive timeline visualization with markdown support",
+  "version": "3.0.0",
+  "description": "Modern Timeline Visualizer with Tailwind CSS - Interactive timeline visualization with markdown support, syntax highlighting, and dark mode",
   "type": "module",
   "scripts": {
     "dev": "vite",

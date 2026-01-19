@@ -12,6 +12,7 @@ import { Search } from './search';
 import { Renderer } from './renderer';
 import { Export } from './export';
 import { Stats } from './stats';
+import { SyntaxHighlighter } from './syntax-highlight';
 import type { ThemeMode } from './types';
 
 // Type definitions for DOM elements
@@ -23,6 +24,7 @@ interface DOMElements {
   loadMarkdownBtn: HTMLButtonElement;
   loadMarkdownInput: HTMLInputElement;
   saveMarkdownBtn: HTMLButtonElement;
+  saveMarkdownBtnAlt: HTMLButtonElement;
   saveHtmlBtn: HTMLButtonElement;
   savePngBtn: HTMLButtonElement;
   savePdfBtn: HTMLButtonElement;
@@ -40,6 +42,7 @@ interface DOMElements {
   templatesModal: HTMLElement;
   templatesModalClose: HTMLButtonElement;
   templateGrid: HTMLElement;
+  lineNumbers: HTMLElement;
 }
 
 /**
@@ -55,6 +58,7 @@ export class TimelineApp {
   private renderer: Renderer;
   private export: Export;
   private stats: Stats;
+  private syntaxHighlighter: SyntaxHighlighter | null = null;
 
   // DOM Elements
   private elements!: DOMElements;
@@ -90,7 +94,8 @@ export class TimelineApp {
       this.loadFromStorage();
       this.loadTheme();
       this.setupEventListeners();
-      this.setupResizable();
+      this.setupLineNumbers();
+      this.setupSyntaxHighlighting();
       this.setupDragAndDrop();
       this.setupSearchAndFilter();
       this.setupModals();
@@ -127,6 +132,7 @@ export class TimelineApp {
       loadMarkdownBtn: document.getElementById('loadMarkdownBtn') as HTMLButtonElement,
       loadMarkdownInput: document.getElementById('loadMarkdownInput') as HTMLInputElement,
       saveMarkdownBtn: document.getElementById('saveMarkdownBtn') as HTMLButtonElement,
+      saveMarkdownBtnAlt: document.getElementById('saveMarkdownBtnAlt') as HTMLButtonElement,
       saveHtmlBtn: document.getElementById('saveHtmlBtn') as HTMLButtonElement,
       savePngBtn: document.getElementById('savePngBtn') as HTMLButtonElement,
       savePdfBtn: document.getElementById('savePdfBtn') as HTMLButtonElement,
@@ -144,6 +150,7 @@ export class TimelineApp {
       templatesModal: document.getElementById('templatesModal') as HTMLElement,
       templatesModalClose: document.getElementById('templatesModalClose') as HTMLButtonElement,
       templateGrid: document.getElementById('templateGrid') as HTMLElement,
+      lineNumbers: document.getElementById('lineNumbers') as HTMLElement,
     };
   }
 
@@ -153,6 +160,7 @@ export class TimelineApp {
   private loadFromStorage(): void {
     const saved = this.storage.loadFromLocalStorage();
     this.elements.markdownInput.value = saved;
+    this.refreshSyntaxHighlighting();
     this.storage.loadHistory();
 
     // Check if a swimlane preference is already set
@@ -177,14 +185,49 @@ export class TimelineApp {
     this.currentTheme = this.storage.loadTheme();
     this.applyTheme(this.currentTheme);
     this.applyViewPreference();
+    this.setupSystemThemeListener();
+  }
+
+  /**
+   * Listen for system theme preference changes
+   */
+  private setupSystemThemeListener(): void {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      // Only react to system changes if user hasn't explicitly set a preference
+      mediaQuery.addEventListener('change', (e) => {
+        if (!this.storage.hasThemePreference()) {
+          const newTheme = e.matches ? 'dark' : 'light';
+          this.applyTheme(newTheme);
+
+          // Update presentation window if open
+          if (this.presentation.isOpen()) {
+            this.presentation.sendUpdate(undefined, newTheme);
+          }
+        }
+      });
+    }
   }
 
   /**
    * Apply theme to document
    */
   private applyTheme(theme: ThemeMode): void {
+    // Toggle dark class on html element for Tailwind
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     document.documentElement.setAttribute('data-theme', theme);
-    this.elements.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+
+    // Update theme toggle icon (Material Icon)
+    const iconElement = this.elements.themeToggle.querySelector('.material-icons-round');
+    if (iconElement) {
+      iconElement.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+    }
+
     this.currentTheme = theme;
     this.storage.saveTheme(theme);
   }
@@ -194,7 +237,11 @@ export class TimelineApp {
    */
   private applyViewPreference(): void {
     if (this.elements.viewToggle) {
-      this.elements.viewToggle.textContent = this.useSwimlanes ? '📜' : '🛤️';
+      // Update Material Icon
+      const iconElement = this.elements.viewToggle.querySelector('.material-icons-round');
+      if (iconElement) {
+        iconElement.textContent = this.useSwimlanes ? 'view_list' : 'view_column';
+      }
       this.elements.viewToggle.title = this.useSwimlanes ? 'Listenansicht' : 'Swimlane-Ansicht';
       if (this.useSwimlanes) {
         this.elements.viewToggle.classList.add('active');
@@ -264,12 +311,34 @@ export class TimelineApp {
    * Update visualize button text based on presentation window state
    */
   private updateVisualizeButton(): void {
+    const iconElement = this.elements.visualizeBtn.querySelector('.material-icons-round');
     if (this.presentation.isOpen()) {
-      this.elements.visualizeBtn.textContent = 'Präsentation schließen';
-      this.elements.visualizeBtn.style.backgroundColor = '#dc3545';
+      // Update button to "close" state
+      if (iconElement) {
+        iconElement.textContent = 'close';
+      }
+      // Update text node (after icon)
+      const textNode = Array.from(this.elements.visualizeBtn.childNodes)
+        .find(node => node.nodeType === Node.TEXT_NODE);
+      if (textNode) {
+        textNode.textContent = ' Präsentation schließen';
+      }
+      // Switch to danger style
+      this.elements.visualizeBtn.classList.remove('bg-primary', 'hover:bg-blue-600', 'shadow-glow');
+      this.elements.visualizeBtn.classList.add('bg-danger', 'hover:bg-red-600');
     } else {
-      this.elements.visualizeBtn.textContent = 'Präsentation öffnen';
-      this.elements.visualizeBtn.style.backgroundColor = '';
+      // Update button to "open" state
+      if (iconElement) {
+        iconElement.textContent = 'play_arrow';
+      }
+      const textNode = Array.from(this.elements.visualizeBtn.childNodes)
+        .find(node => node.nodeType === Node.TEXT_NODE);
+      if (textNode) {
+        textNode.textContent = ' Präsentation öffnen';
+      }
+      // Switch to primary style
+      this.elements.visualizeBtn.classList.remove('bg-danger', 'hover:bg-red-600');
+      this.elements.visualizeBtn.classList.add('bg-primary', 'hover:bg-blue-600', 'shadow-glow');
     }
   }
 
@@ -305,6 +374,7 @@ export class TimelineApp {
           const markdown = await this.export.loadMarkdownWithImages();
           if (markdown) {
             this.elements.markdownInput.value = markdown;
+            this.refreshSyntaxHighlighting();
             this.storage.saveToHistory(markdown);
             this.storage.saveToLocalStorage(markdown);
             await this.parseAndRenderTimeline();
@@ -324,6 +394,10 @@ export class TimelineApp {
 
     this.elements.loadMarkdownInput.addEventListener('change', (e) => this.handleFileLoad(e));
     this.elements.saveMarkdownBtn.addEventListener('click', () => this.handleSaveMarkdown());
+    // Alternative save button in the action area
+    if (this.elements.saveMarkdownBtnAlt) {
+      this.elements.saveMarkdownBtnAlt.addEventListener('click', () => this.handleSaveMarkdown());
+    }
     this.elements.saveHtmlBtn.addEventListener('click', () => this.handleSaveHtml());
     this.elements.savePngBtn.addEventListener('click', () => this.handleSavePng());
     this.elements.savePdfBtn.addEventListener('click', () => this.handleSavePdf());
@@ -333,65 +407,6 @@ export class TimelineApp {
 
     // Timeline click events
     this.elements.timelineOutput.addEventListener('click', (e) => this.handleTimelineClick(e));
-  }
-
-  /**
-   * Setup resizable panel
-   */
-  private setupResizable(): void {
-    const inputPanel = document.querySelector('.input-panel') as HTMLElement;
-    if (!inputPanel) return;
-
-    let isResizing = false;
-    let startX = 0;
-    let startWidth = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      // Only resize if clicked on the right edge (within 5px)
-      const rect = inputPanel.getBoundingClientRect();
-      if (Math.abs(e.clientX - rect.right) > 5) {
-        return;
-      }
-
-      isResizing = true;
-      startX = e.clientX;
-      startWidth = inputPanel.offsetWidth;
-      inputPanel.classList.add('resizing');
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-
-      const diff = e.clientX - startX;
-      const newWidth = startWidth + diff;
-
-      // Constrain width between 400px and 800px
-      const constrainedWidth = Math.max(400, Math.min(800, newWidth));
-      inputPanel.style.width = `${constrainedWidth}px`;
-      inputPanel.style.maxWidth = `${constrainedWidth}px`;
-    };
-
-    const handleMouseUp = () => {
-      isResizing = false;
-      inputPanel.classList.remove('resizing');
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-
-      // Save width preference
-      localStorage.setItem('editorPanelWidth', inputPanel.style.width);
-    };
-
-    inputPanel.addEventListener('mousedown', handleMouseDown);
-
-    // Load saved width preference
-    const savedWidth = localStorage.getItem('editorPanelWidth');
-    if (savedWidth) {
-      inputPanel.style.width = savedWidth;
-      inputPanel.style.maxWidth = savedWidth;
-    }
   }
 
   /**
@@ -450,6 +465,7 @@ export class TimelineApp {
       const result = e.target?.result;
       const text = typeof result === 'string' ? result : '';
       this.elements.markdownInput.value = text;
+      this.refreshSyntaxHighlighting();
       this.storage.saveToHistory(text);
       this.storage.saveToLocalStorage(text);
       this.parseAndRenderTimeline();
@@ -551,12 +567,12 @@ export class TimelineApp {
       if (document.body.classList.contains('fullscreen-mode')) {
         document.body.classList.remove('fullscreen-mode');
       }
-      if (this.elements.statsModal.classList.contains('show')) {
-        this.elements.statsModal.classList.remove('show');
+      if (!this.elements.statsModal.classList.contains('hidden')) {
+        this.elements.statsModal.classList.add('hidden');
         this.elements.statsToggle.classList.remove('active');
       }
-      if (this.elements.templatesModal.classList.contains('show')) {
-        this.elements.templatesModal.classList.remove('show');
+      if (!this.elements.templatesModal.classList.contains('hidden')) {
+        this.elements.templatesModal.classList.add('hidden');
         this.elements.templatesToggle.classList.remove('active');
       }
     }
@@ -681,36 +697,39 @@ export class TimelineApp {
         // Handle markdown/text files
         if (otherFiles.length > 0) {
           const file = otherFiles[0];
-          console.log('Checking file:', file.name, file.type);
+          if (file) {
+            console.log('Checking file:', file.name, file.type);
 
-          if (
-            file.name.endsWith('.md') ||
-            file.type === 'text/markdown' ||
-            file.type === 'text/plain'
-          ) {
-            console.log('Loading markdown file...');
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-              const result = evt.target?.result;
-              if (typeof result === 'string') {
-                this.elements.markdownInput.value = result;
-                this.storage.saveToHistory(result);
-                this.storage.saveToLocalStorage(result);
-                this.parseAndRenderTimeline();
+            if (
+              file.name.endsWith('.md') ||
+              file.type === 'text/markdown' ||
+              file.type === 'text/plain'
+            ) {
+              console.log('Loading markdown file...');
+              const reader = new FileReader();
+              reader.onload = (evt) => {
+                const result = evt.target?.result;
+                if (typeof result === 'string') {
+                  this.elements.markdownInput.value = result;
+                  this.refreshSyntaxHighlighting();
+                  this.storage.saveToHistory(result);
+                  this.storage.saveToLocalStorage(result);
+                  this.parseAndRenderTimeline();
 
-                // Update presentation window if open
-                if (this.presentation.isOpen()) {
-                  this.presentation.sendUpdate(result);
+                  // Update presentation window if open
+                  if (this.presentation.isOpen()) {
+                    this.presentation.sendUpdate(result);
+                  }
                 }
-              }
-            };
-            reader.onerror = () => {
-              alert('Fehler beim Laden der Markdown-Datei.');
-            };
-            reader.readAsText(file, 'utf-8');
-          } else if (imageFiles.length === 0) {
-            // Only show error if there were no images to handle
-            alert('Bitte nur .md, Text-Dateien oder Bilder ablegen.');
+              };
+              reader.onerror = () => {
+                alert('Fehler beim Laden der Markdown-Datei.');
+              };
+              reader.readAsText(file, 'utf-8');
+            } else if (imageFiles.length === 0) {
+              // Only show error if there were no images to handle
+              alert('Bitte nur .md, Text-Dateien oder Bilder ablegen.');
+            }
           }
         }
       } catch (error) {
@@ -732,7 +751,7 @@ export class TimelineApp {
     this.elements.searchInput.addEventListener('input', (e) => {
       const target = e.target as HTMLInputElement;
       const query = target.value;
-      this.elements.searchClear.classList.toggle('visible', query.length > 0);
+      this.elements.searchClear.classList.toggle('hidden', query.length === 0);
 
       if (this.searchTimeoutId) {
         clearTimeout(this.searchTimeoutId);
@@ -750,7 +769,7 @@ export class TimelineApp {
 
     this.elements.searchClear.addEventListener('click', () => {
       this.elements.searchInput.value = '';
-      this.elements.searchClear.classList.remove('visible');
+      this.elements.searchClear.classList.add('hidden');
       this.search.applySearchAndFilter('', this.elements.timelineOutput);
 
       // Update presentation window if open
@@ -761,7 +780,7 @@ export class TimelineApp {
 
     this.elements.filterButton.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.elements.filterMenu.classList.toggle('show');
+      this.elements.filterMenu.classList.toggle('hidden');
     });
 
     document.addEventListener('click', (e) => {
@@ -770,7 +789,7 @@ export class TimelineApp {
         !this.elements.filterMenu.contains(target) &&
         target !== this.elements.filterButton
       ) {
-        this.elements.filterMenu.classList.remove('show');
+        this.elements.filterMenu.classList.add('hidden');
       }
     });
 
@@ -811,37 +830,37 @@ export class TimelineApp {
       const events = this.renderer.getAllEvents();
       this.stats.calculate(events);
       this.stats.render();
-      this.elements.statsModal.classList.add('show');
+      this.elements.statsModal.classList.remove('hidden');
       this.elements.statsToggle.classList.add('active');
     });
 
     this.elements.statsModalClose.addEventListener('click', () => {
-      this.elements.statsModal.classList.remove('show');
+      this.elements.statsModal.classList.add('hidden');
       this.elements.statsToggle.classList.remove('active');
     });
 
     // Templates Modal
     this.elements.templatesToggle.addEventListener('click', () => {
-      this.elements.templatesModal.classList.add('show');
+      this.elements.templatesModal.classList.remove('hidden');
       this.elements.templatesToggle.classList.add('active');
     });
 
     this.elements.templatesModalClose.addEventListener('click', () => {
-      this.elements.templatesModal.classList.remove('show');
+      this.elements.templatesModal.classList.add('hidden');
       this.elements.templatesToggle.classList.remove('active');
     });
 
     // Close on outside click
     this.elements.statsModal.addEventListener('click', (e) => {
       if (e.target === this.elements.statsModal) {
-        this.elements.statsModal.classList.remove('show');
+        this.elements.statsModal.classList.add('hidden');
         this.elements.statsToggle.classList.remove('active');
       }
     });
 
     this.elements.templatesModal.addEventListener('click', (e) => {
       if (e.target === this.elements.templatesModal) {
-        this.elements.templatesModal.classList.remove('show');
+        this.elements.templatesModal.classList.add('hidden');
         this.elements.templatesToggle.classList.remove('active');
       }
     });
@@ -858,10 +877,10 @@ export class TimelineApp {
       if (!template) return;
 
       const card = document.createElement('div');
-      card.className = 'template-card';
+      card.className = 'bg-gray-50 dark:bg-zinc-800 rounded-lg p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors border border-gray-200 dark:border-zinc-700';
       card.innerHTML = `
-        <div class="template-title">${template.name}</div>
-        <div class="template-description">${template.description}</div>
+        <div class="font-semibold text-gray-800 dark:text-gray-200 mb-1">${template.name}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">${template.description}</div>
       `;
       card.addEventListener('click', () => this.loadTemplate(key));
       this.elements.templateGrid.appendChild(card);
@@ -881,6 +900,7 @@ export class TimelineApp {
         return;
       }
       this.elements.markdownInput.value = template.content;
+      this.refreshSyntaxHighlighting();
       this.storage.saveToHistory(template.content);
       this.storage.saveToLocalStorage(template.content);
       this.parseAndRenderTimeline();
@@ -890,8 +910,60 @@ export class TimelineApp {
         this.presentation.sendUpdate(template.content);
       }
 
-      this.elements.templatesModal.classList.remove('show');
+      this.elements.templatesModal.classList.add('hidden');
       this.elements.templatesToggle.classList.remove('active');
+    }
+  }
+
+  /**
+   * Setup line numbers for the editor
+   */
+  private setupLineNumbers(): void {
+    const updateLineNumbers = () => {
+      if (!this.elements.lineNumbers || !this.elements.markdownInput) return;
+
+      const text = this.elements.markdownInput.value;
+      const lines = text.split('\n').length;
+      const lineNumbersHtml: string[] = [];
+
+      for (let i = 1; i <= lines; i++) {
+        lineNumbersHtml.push(`<div class="leading-6">${i}</div>`);
+      }
+
+      this.elements.lineNumbers.innerHTML = lineNumbersHtml.join('');
+    };
+
+    // Update on input
+    this.elements.markdownInput.addEventListener('input', updateLineNumbers);
+
+    // Sync scroll position
+    this.elements.markdownInput.addEventListener('scroll', () => {
+      if (this.elements.lineNumbers) {
+        this.elements.lineNumbers.scrollTop = this.elements.markdownInput.scrollTop;
+      }
+    });
+
+    // Initial update
+    updateLineNumbers();
+  }
+
+  /**
+   * Setup syntax highlighting for the editor
+   */
+  private setupSyntaxHighlighting(): void {
+    this.syntaxHighlighter = new SyntaxHighlighter(
+      'markdownInput',
+      'highlightOverlay',
+      'highlightContent'
+    );
+  }
+
+  /**
+   * Refresh syntax highlighting (call after programmatic changes)
+   */
+  private refreshSyntaxHighlighting(): void {
+    if (this.syntaxHighlighter) {
+      this.syntaxHighlighter.refresh();
     }
   }
 }

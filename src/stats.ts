@@ -30,7 +30,6 @@ export class Stats {
       success: 0,
       meeting: 0,
       work: 0,
-      info: 0,
       none: 0,
     },
   };
@@ -53,7 +52,6 @@ export class Stats {
         success: 0,
         meeting: 0,
         work: 0,
-        info: 0,
         none: 0,
       },
     };
@@ -108,13 +106,12 @@ export class Stats {
     distributionContainer.innerHTML = '';
 
     const classColors: Record<string, string> = {
-      critical: '#d32f2f',
-      warning: '#ef6c00',
-      success: '#2e7d32',
-      meeting: '#6a1b9a',
-      work: '#1565c0',
-      info: '#0288d1',
-      none: '#6c757d',
+      critical: '#ef4444',
+      warning: '#f59e0b',
+      success: '#22c55e',
+      meeting: '#a855f7',
+      work: '#3b82f6',
+      none: '#6b7280',
     };
 
     const classLabels: Record<string, string> = {
@@ -123,7 +120,6 @@ export class Stats {
       success: 'Success',
       meeting: 'Meeting',
       work: 'Work',
-      info: 'Info',
       none: 'Keine',
     };
 

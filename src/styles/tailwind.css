@@ -136,3 +136,47 @@
     @apply text-center text-gray-500 dark:text-gray-400 italic py-20;
   }
 }
+
+/* Timeline Content - Markdown Rendering */
+@layer components {
+  .timeline-content p {
+    @apply mb-3 leading-relaxed;
+  }
+
+  .timeline-content p:last-child {
+    @apply mb-0;
+  }
+
+  .timeline-content ul,
+  .timeline-content ol {
+    @apply pl-5 my-2 space-y-1;
+  }
+
+  .timeline-content ul {
+    @apply list-disc;
+  }
+
+  .timeline-content ol {
+    @apply list-decimal;
+  }
+
+  .timeline-content li {
+    @apply pl-1;
+  }
+
+  .timeline-content code {
+    @apply bg-gray-100 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  .timeline-content pre {
+    @apply bg-gray-100 dark:bg-zinc-800 p-3 rounded-lg overflow-x-auto my-3;
+  }
+
+  .timeline-content pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .timeline-content blockquote {
+    @apply border-l-4 border-gray-300 dark:border-zinc-600 pl-4 italic text-gray-600 dark:text-gray-400 my-3;
+  }
+}

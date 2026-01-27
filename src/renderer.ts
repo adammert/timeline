@@ -352,16 +352,16 @@ export class Renderer {
       }
     });
 
-    // Style paragraphs
+    // Style paragraphs (spacing handled by CSS in tailwind.css)
     const paragraphs = tempDiv.querySelectorAll('p');
     paragraphs.forEach(p => {
       p.classList.add('text-gray-600', 'dark:text-gray-300');
     });
 
-    // Style lists
+    // Style lists (list-style and indentation handled by CSS in tailwind.css)
     const lists = tempDiv.querySelectorAll('ul, ol');
     lists.forEach(list => {
-      list.classList.add('list-disc', 'list-inside', 'space-y-1', 'text-gray-600', 'dark:text-gray-300');
+      list.classList.add('text-gray-600', 'dark:text-gray-300');
     });
 
     // Find and replace all images with images/ prefix BEFORE adding to DOM

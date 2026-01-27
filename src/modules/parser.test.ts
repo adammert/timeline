@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Parser } from './parser';
+import { Parser } from '../parser';
 
 describe('Parser', () => {
   describe('extractTitleFromMarkdown', () => {
@@ -106,10 +106,10 @@ describe('Parser', () => {
     });
 
     it('should handle metadata like group and class', () => {
-      const text = 'date: 2025-01-01\ngroup: Work\nclass: urgent\nImportant event';
+      const text = 'date: 2025-01-01\ngroup: Work\nclass: critical\nImportant event';
       const result = Parser.parseEvents(text, 0);
       expect(result[0].group).toBe('Work');
-      expect(result[0].eventClass).toBe('is-urgent');
+      expect(result[0].eventClass).toBe('is-critical');
       expect(result[0].content).toBe('Important event');
     });
 

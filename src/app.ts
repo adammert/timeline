@@ -74,6 +74,9 @@ export class TimelineApp {
   // Current theme
   private currentTheme: ThemeMode = 'light';
 
+  // File picker state (prevent double-click)
+  private isFilePickerOpen = false;
+
   constructor() {
     this.storage = new Storage();
     this.images = new Images();
@@ -362,15 +365,15 @@ export class TimelineApp {
 
     // File operations
     this.elements.loadMarkdownBtn.addEventListener('click', async () => {
-      // Try using File System Access API first
-      if ('showOpenFilePicker' in window) {
-        const useFileSystem = confirm(
-          'Möchten Sie eine Markdown-Datei mit Bildern laden?\n\n' +
-            'Ja = Ordner-basiertes Laden (mit Bildern)\n' +
-            'Nein = Einzelne Datei auswählen'
-        );
+      // Prevent double-click while file picker is open
+      if (this.isFilePickerOpen) return;
 
-        if (useFileSystem) {
+      // Use File System Access API directly when available
+      if ('showOpenFilePicker' in window) {
+        this.isFilePickerOpen = true;
+        this.elements.loadMarkdownBtn.disabled = true;
+        this.elements.loadMarkdownBtn.style.opacity = '0.5';
+        try {
           const markdown = await this.export.loadMarkdownWithImages();
           if (markdown) {
             this.elements.markdownInput.value = markdown;
@@ -383,11 +386,15 @@ export class TimelineApp {
               this.presentation.sendUpdate(markdown);
             }
           }
-          return;
+        } finally {
+          this.isFilePickerOpen = false;
+          this.elements.loadMarkdownBtn.disabled = false;
+          this.elements.loadMarkdownBtn.style.opacity = '1';
         }
+        return;
       }
 
-      // Fallback to standard file input
+      // Fallback for browsers without File System Access API
       this.elements.loadMarkdownInput.value = '';
       this.elements.loadMarkdownInput.click();
     });
@@ -499,9 +506,9 @@ export class TimelineApp {
     if (hasImages) {
       const useFileSystem = confirm(
         'Diese Timeline enthält Bilder.\n\n' +
-          'Möchten Sie mit Bildern speichern? (Chrome/Edge erforderlich)\n\n' +
-          'Ja = Ordner mit Markdown + images/\n' +
-          'Nein = Nur Markdown-Datei'
+        'Möchten Sie mit Bildern speichern? (Chrome/Edge erforderlich)\n\n' +
+        'Ja = Ordner mit Markdown + images/\n' +
+        'Nein = Nur Markdown-Datei'
       );
 
       if (useFileSystem) {
@@ -966,15 +973,4 @@ export class TimelineApp {
       this.syntaxHighlighter.refresh();
     }
   }
-}
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const app = new TimelineApp();
-    app.init();
-  });
-} else {
-  const app = new TimelineApp();
-  app.init();
 }

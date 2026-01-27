@@ -259,6 +259,7 @@ export class Export {
 
   /**
    * Load markdown with images using File System Access API
+   * Streamlined: Select .md file, then auto-load images from parent/images/
    */
   async loadMarkdownWithImages(): Promise<string | null> {
     if (!('showOpenFilePicker' in window)) {
@@ -267,8 +268,9 @@ export class Export {
     }
 
     try {
-      // Open file picker for .md file
+      // Select .md file (id makes browser remember last location)
       const [fileHandle] = await (window as any).showOpenFilePicker({
+        id: 'timeline-markdown-file',
         types: [{
           description: 'Markdown Dateien',
           accept: { 'text/markdown': ['.md'] }
@@ -279,18 +281,27 @@ export class Export {
       const file = await fileHandle.getFile();
       const markdown = await file.text();
 
-      // Check if markdown contains image references
-      const hasImages = /!\[([^\]]*)\]\(images\/([^)]+)\)/.test(markdown);
+      // Extract all image references from markdown
+      const imageRefs = [...markdown.matchAll(/!\[([^\]]*)\]\(images\/([^)]+)\)/g)];
+      const referencedImages = imageRefs.map(m => m[2]);
 
-      if (hasImages) {
-        const loadImages = confirm(
-          'Diese Markdown-Datei enthält Bilder.\n\n' +
-          'Möchten Sie den Ordner mit den Bildern auswählen?\n\n' +
-          '(Der Ordner sollte einen "images" Unterordner enthalten)'
-        );
+      // If images are referenced, ask for the parent folder to load them
+      if (referencedImages.length > 0) {
+        // Automatically open directory picker (no confirm dialog)
+        // Using 'id' makes the browser remember the last used location
+        const dirHandle = await (window as any).showDirectoryPicker({
+          id: 'timeline-images-folder',
+          mode: 'read'
+        });
 
-        if (loadImages) {
-          await this.loadImagesFromDirectory();
+        const result = await this.loadImagesFromDirectoryHandle(dirHandle, referencedImages);
+
+        // Only show message if images are missing
+        if (result.missing.length > 0) {
+          alert(
+            `${result.loaded} von ${referencedImages.length} Bildern geladen.\n\n` +
+            `Fehlende Bilder:\n• ${result.missing.join('\n• ')}`
+          );
         }
       }
 
@@ -307,50 +318,42 @@ export class Export {
   }
 
   /**
-   * Load images from directory
+   * Load images from directory handle
    */
-  async loadImagesFromDirectory(): Promise<number> {
-    try {
-      // Ask user to select directory containing images folder
-      const dirHandle = await (window as any).showDirectoryPicker({
-        mode: 'read',
-        startIn: 'documents'
-      });
+  private async loadImagesFromDirectoryHandle(
+    dirHandle: FileSystemDirectoryHandle,
+    referencedImages: string[]
+  ): Promise<{ loaded: number; missing: string[] }> {
+    const result = { loaded: 0, missing: [] as string[] };
 
-      // Try to find images subdirectory
-      let imagesDirHandle;
+    try {
+      // Try to get images subdirectory
+      let imagesDirHandle: FileSystemDirectoryHandle;
       try {
         imagesDirHandle = await dirHandle.getDirectoryHandle('images');
-      } catch (e) {
-        alert('Kein "images" Unterordner gefunden.');
-        return 0;
+      } catch {
+        // No images folder - all images are missing
+        result.missing = referencedImages;
+        return result;
       }
 
-      // Load all images from subdirectory
-      let count = 0;
-      for await (const entry of imagesDirHandle.values()) {
-        if (entry.kind === 'file' && entry.name.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i)) {
-          const fileHandle = await imagesDirHandle.getFileHandle(entry.name);
+      // Load each referenced image
+      for (const imageName of referencedImages) {
+        try {
+          const fileHandle = await imagesDirHandle.getFileHandle(imageName);
           const file = await fileHandle.getFile();
-          await this.imagesService.storeImage(entry.name, file);
-          count++;
+          await this.imagesService.storeImage(imageName, file);
+          result.loaded++;
+        } catch {
+          result.missing.push(imageName);
         }
       }
 
-      if (count > 0) {
-        alert(`${count} Bild(er) erfolgreich geladen.`);
-      }
-
-      return count;
-
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
-        return 0;
-      }
-      console.error('Error loading images:', e);
-      alert('Fehler beim Laden der Bilder: ' + e.message);
-      return 0;
+    } catch (e) {
+      console.error('Error loading images from directory:', e);
     }
+
+    return result;
   }
 
   /**
